@@ -175,8 +175,7 @@ object AnalyticsEvents {
     fun logEvent(eventName: String, params: Bundle?, isFirebaseEventsEnable: Boolean = true) {
         if (!AnalyticsModule.isEnabled) return
         if (AnalyticsModule.isTestMode) EventNameValidator.validate(eventName, params)
-        // Radar ko log event & properties
-        /*try {
+        try {
             if (params == null || !isFirebaseEventsEnable) return
             if (AnalyticsModule.isTestMode) {
                 val builder = StringBuilder("\n===== FirebaseEvents =====\neventName: $eventName\n---Params---")
@@ -199,7 +198,7 @@ object AnalyticsEvents {
         } catch (e: Exception) {
             Log.e(TAG, e.toString())
             e.printStackTrace()
-        }*/
+        }
     }
 
     fun flushEventsImmediate() {

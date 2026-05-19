@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "317160842856",
+    "project_id": "fir-eventframework",
+    "storage_bucket": "fir-eventframework.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317160842856:android:bcaf11c876b5e604d1fddd",
+        "android_client_info": {
+          "package_name": "com.example.firebaseeventframework"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNYQbJUEaj4o_NuCXFPLtht25fDLAZWsY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

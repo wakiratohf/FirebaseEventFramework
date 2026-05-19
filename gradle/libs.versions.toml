@@ -14,6 +14,8 @@ navigationFragmentKtx = "2.9.8"
 gson = "2.14.0"
 material = "1.14.0"
 firebaseBom = "34.13.0"
+googleGmsGoogleServices = "4.4.4"
+firebaseCrashlytics = "3.0.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,3 +46,5 @@ firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashly
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinCompose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+googleGmsGoogleServices = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+googleFirebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }

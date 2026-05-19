@@ -44,9 +44,14 @@ internal object EventNameValidator {
                 Log.w(TAG, "Param key '$key' on '$eventName' is ${key.length} chars (max $PARAM_KEY_MAX).")
                 ok = false
             }
-            val value = params.getString(key)
-            if (value != null && value.length > PARAM_VALUE_MAX) {
-                Log.w(TAG, "Param value for '$key' on '$eventName' is ${value.length} chars (max $PARAM_VALUE_MAX).")
+            // Bundle.getString throws ClassCastException when the stored value
+            // is not a String (e.g. Int/Long). Read as Any? and only validate
+            // length when the value is actually a String — Firebase's 100-char
+            // cap only applies to string params anyway.
+            @Suppress("DEPRECATION")
+            val raw: Any? = params.get(key)
+            if (raw is String && raw.length > PARAM_VALUE_MAX) {
+                Log.w(TAG, "Param value for '$key' on '$eventName' is ${raw.length} chars (max $PARAM_VALUE_MAX).")
                 ok = false
             }
         }
