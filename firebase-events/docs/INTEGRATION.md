@@ -19,10 +19,13 @@ Total time: ~15 minutes once Firebase is set up.
 
 ---
 
-## Step 1 — Copy the module
+## Step 1 — Copy the modules
+
+Copy **both** `firebase-events/` and `firebase-events-lint/`:
 
 ```bash
-cp -R /path/to/firebase-events your-project/firebase-events
+cp -R /path/to/firebase-events       your-project/firebase-events
+cp -R /path/to/firebase-events-lint  your-project/firebase-events-lint
 ```
 
 Folder layout you should see:
@@ -30,12 +33,16 @@ Folder layout you should see:
 ```
 your-project/
 ├── app/
-├── firebase-events/        ← the SDK
+├── firebase-events/             ← the SDK
 │   ├── build.gradle.kts
 │   ├── VERSION
 │   ├── README.md
 │   ├── docs/
 │   └── src/main/java/com/tohsoft/firebase_events/...
+├── firebase-events-lint/        ← Lint rules enforcing buttonName convention
+│   ├── build.gradle.kts
+│   ├── gradle.properties        ← required: disables auto kotlin-stdlib
+│   └── src/main/java/com/tohsoft/firebase_events/lint/...
 └── settings.gradle.kts
 ```
 
@@ -47,18 +54,50 @@ In `settings.gradle.kts`:
 
 ```kotlin
 include(":firebase-events")
+include(":firebase-events-lint")
+```
+
+In root `build.gradle.kts` add the two extra plugin aliases (`apply false`):
+
+```kotlin
+plugins {
+    // ... existing aliases ...
+    alias(libs.plugins.kotlinJvm) apply false      // for :firebase-events-lint
+    alias(libs.plugins.androidLint) apply false    // for :firebase-events-lint
+}
 ```
 
 In `app/build.gradle.kts` dependencies block:
 
 ```kotlin
 implementation(project(":firebase-events"))
+lintChecks(project(":firebase-events-lint"))
+```
+
+And promote Lint issues to ERROR (so they fail the build):
+
+```kotlin
+android {
+    lint {
+        error += setOf(
+            "ClickBtnEvUnderscore",
+            "ClickBtnEvBtnPrefix",
+            "ClickBtnEvNotCamelCase",
+            "ClickBtnEvEmpty",
+        )
+    }
+}
 ```
 
 If your project uses a version catalog (`libs.versions.toml`), make sure these
-catalog entries exist (the SDK's `build.gradle.kts` references them):
+catalog entries exist (the SDK's `build.gradle.kts` and the Lint module's
+`build.gradle.kts` reference them):
 
 ```toml
+[versions]
+# Lint API: AGP_major + 23. AGP 8.6 → 31.6; AGP 9.2 → 32.2.
+lintApi = "31.6.0"
+
 [libraries]
 androidx-core-ktx = ...
 androidx-appcompat = ...
@@ -70,11 +109,18 @@ firebase-core = ...
 firebase-config = ...
 firebase-analytics = ...
 firebase-crashlytics = ...
+lint-api = { group = "com.android.tools.lint", name = "lint-api", version.ref = "lintApi" }
+lint-checks = { group = "com.android.tools.lint", name = "lint-checks", version.ref = "lintApi" }
+lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.ref = "lintApi" }
+
+[plugins]
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+androidLint = { id = "com.android.lint", version.ref = "agp" }
 ```
 
 If you don't use a version catalog, replace `libs.xxx` references in
-`firebase-events/build.gradle.kts` with direct `"group:artifact:version"`
-strings.
+`firebase-events/build.gradle.kts` and `firebase-events-lint/build.gradle.kts`
+with direct `"group:artifact:version"` strings.
 
 ---
 
@@ -202,3 +248,6 @@ For project-specific events (screen names, button names, dialog names), see
 | Build fails on `libs.firebase.crashlytics` | Missing version catalog entry | Add it to `libs.versions.toml` or hardcode the coordinate |
 | `AnalyticsModule.getApplication()` returns null | `init` was never called | Call `init` from `Application.onCreate` BEFORE the first activity is created |
 | Events show in DebugView but not in the standard reports | Less than ~24h wait, or you violated a 40-char limit | Check the soft warnings in Logcat (`AnalyticsValidator` tag) |
+| `:firebase-events-lint:assemble` → *"plugin already on the classpath with an unknown version"* | Root `build.gradle.kts` is missing `alias(libs.plugins.kotlinJvm) apply false` and `alias(libs.plugins.androidLint) apply false` | Add both aliases to the root plugins block |
+| `:firebase-events:prepareLintJarForPublish` → *"Found more than one jar in the lintPublish configuration"* | `:firebase-events-lint` is publishing transitive `kotlin-stdlib` | Make sure `firebase-events-lint/gradle.properties` contains `kotlin.stdlib.default.dependency=false` and stdlib is declared `compileOnly` |
+| Lint runs but `ClickBtnEv*` issues never fire | No enum in `:app` implements an interface literally named `ClickBtnEv` | Create `event/ClickBtnEv.kt` marker (3 props: `screenName`, `buttonName`, `popupName`) and make screen enums implement it |

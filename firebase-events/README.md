@@ -37,14 +37,22 @@ deps are Firebase Analytics, Firebase Crashlytics, Firebase Config, and Gson.
 ## Quick start (copy-paste install)
 
 ```bash
-# 1. Copy the module folder into the new project (sibling of :app)
-cp -R /path/to/this/firebase-events your-project/
+# 1. Copy BOTH module folders into the new project (sibling of :app)
+cp -R /path/to/this/firebase-events       your-project/
+cp -R /path/to/this/firebase-events-lint  your-project/   # ← Lint rules
 
-# 2. Register it in settings.gradle.kts
-echo 'include(":firebase-events")' >> your-project/settings.gradle.kts
+# 2. Register both in settings.gradle.kts
+echo 'include(":firebase-events")'      >> your-project/settings.gradle.kts
+echo 'include(":firebase-events-lint")' >> your-project/settings.gradle.kts
 
-# 3. Add the dependency in app/build.gradle.kts
+# 3. In app/build.gradle.kts:
 #    implementation(project(":firebase-events"))
+#    lintChecks(project(":firebase-events-lint"))
+#
+#    android { lint { error += setOf(
+#        "ClickBtnEvUnderscore", "ClickBtnEvBtnPrefix",
+#        "ClickBtnEvNotCamelCase", "ClickBtnEvEmpty",
+#    ) } }
 ```
 
 ```kotlin
@@ -103,7 +111,7 @@ They belong in your app — see [`docs/PROJECT_EVENT_TEMPLATE.md`](docs/PROJECT_
 | File | Purpose |
 |---|---|
 | [`docs/CONTEXT.md`](docs/CONTEXT.md) | Domain language: what each term means, glossary |
-| [`docs/NAMING_CONVENTION.md`](docs/NAMING_CONVENTION.md) | **Chốt convention** cho `screenName`, `popupName`, `buttonName` — dùng chung cho mọi project copy module này |
+| [`docs/NAMING_CONVENTION.md`](docs/NAMING_CONVENTION.md) | **Chốt convention** cho `screenName`, `popupName`, `buttonName` — dùng chung cho mọi project copy module này. Lint module `:firebase-events-lint` (sibling, copy kèm) enforce ở compile time với 4 issue ID. |
 | [`docs/INTEGRATION.md`](docs/INTEGRATION.md) | Step-by-step setup for a fresh project |
 | [`docs/samples/SAMPLE_APP.md`](docs/samples/SAMPLE_APP.md) | End-to-end "hello world" Kotlin code (Application + Activity + custom event + consent) |
 | [`docs/samples/DEMO_IMPLEMENTATION_GUIDE.md`](docs/samples/DEMO_IMPLEMENTATION_GUIDE.md) | Wiring guide cho demo project khi Gradle đã sẵn sàng |

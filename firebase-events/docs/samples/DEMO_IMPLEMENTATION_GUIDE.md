@@ -1,14 +1,23 @@
 # Demo project — Implementation guide for `firebase-events`
 
 > **Đối tượng**: dev đang làm 1 demo Android project và **đã** thực hiện
-> xong các bước Gradle (`include(":firebase-events")` trong
-> `settings.gradle.kts`, `implementation(project(":firebase-events"))`
-> trong `app/build.gradle.kts`, đã có `google-services.json` cho từng
-> flavor). Tài liệu này chỉ tập trung vào **wiring code** để có thể log
-> được event đầu tiên + tổ chức catalog cho dài hạn.
+> xong các bước Gradle:
+> - `settings.gradle.kts` có `include(":firebase-events")` và
+>   `include(":firebase-events-lint")`.
+> - `app/build.gradle.kts` có `implementation(project(":firebase-events"))`
+>   và `lintChecks(project(":firebase-events-lint"))`.
+> - `android.lint.error += setOf("ClickBtnEvUnderscore",
+>   "ClickBtnEvBtnPrefix", "ClickBtnEvNotCamelCase",
+>   "ClickBtnEvEmpty")` để promote Lint issue lên ERROR.
+> - Đã có `google-services.json` cho từng flavor.
+>
+> Tài liệu này chỉ tập trung vào **wiring code** để có thể log được
+> event đầu tiên + tổ chức catalog cho dài hạn (kèm interface
+> `ClickBtnEv` để Lint rule fire).
 >
 > Nếu bạn vẫn còn ở bước copy module / cấu hình Gradle, hãy đọc
-> [`INTEGRATION.md`](INTEGRATION.md) trước.
+> [`../INTEGRATION.md`](../INTEGRATION.md) hoặc
+> [`../FRESH_PROJECT_GUIDE.md`](../FRESH_PROJECT_GUIDE.md) trước.
 
 ---
 
@@ -101,11 +110,24 @@ class DemoApp : Application() {
 
 ## Bước 2 — Khai báo catalog (constants) cho project
 
-Tạo package `com.example.demo.event` và 3 file constants. **Không**
+Tạo package `com.example.demo.event` và các file sau. **Không**
 hard-code các string này ở call-site (typo = mất data, không
 detect được).
 
+> ⚠ Phải tạo interface marker `ClickBtnEv` — Lint rule trong
+> `:firebase-events-lint` chỉ fire trên enum implement interface
+> tên `ClickBtnEv` (any package).
+
 ```kotlin
+// event/ClickBtnEv.kt — marker để Lint rule hook
+package com.example.demo.event
+
+interface ClickBtnEv {
+    val screenName: String
+    val buttonName: String
+    val popupName: String
+}
+
 // event/ScreenName.kt
 package com.example.demo.event
 
@@ -116,28 +138,36 @@ object ScreenName {
     const val ONBOARDING = "onboarding"
 }
 
-// event/ButtonName.kt
-package com.example.demo.event
-
-object ButtonName {
-    const val REFRESH = "btn_refresh"
-    const val SUBSCRIBE = "btn_subscribe"
-    const val CLOSE = "btn_close"
-}
-
 // event/PopupName.kt
 package com.example.demo.event
 
 object PopupName {
-    const val RATE_DIALOG = "rate_dialog"
-    const val PERMISSION_REQUEST = "permission_request"
+    const val RATE_DIALOG = "rateDialog"
+    const val PERMISSION_REQUEST = "permissionRequest"
     const val NONE = ""
+}
+
+// event/HomeBtnEv.kt — 1 enum cho mỗi screen
+package com.example.demo.event
+
+enum class HomeBtnEv(
+    override val screenName: String,
+    override val buttonName: String,
+    override val popupName: String,
+) : ClickBtnEv {
+    REFRESH(ScreenName.HOME, "refresh", ""),
+    SUBSCRIBE(ScreenName.HOME, "subscribe", ""),
+    CLOSE(ScreenName.HOME, "close", ""),
 }
 ```
 
-Quy ước (xem [`CONTEXT.md`](CONTEXT.md)):
-- snake_case, viết thường, ≤ 40 ký tự, bắt đầu bằng chữ cái.
-- Không cần prefix project (Firebase property đã scope sẵn).
+Quy ước (xem [`../CONTEXT.md`](../CONTEXT.md) và
+[`../NAMING_CONVENTION.md`](../NAMING_CONVENTION.md)):
+- `screenName` / `popupName`: camelCase value, ≤ 40 ký tự.
+- `buttonName`: camelCase, KHÔNG `_`, KHÔNG prefix `btn`, bắt đầu
+  bằng chữ thường. **Vi phạm → Lint fail build** với issue ID
+  `ClickBtnEvUnderscore` / `ClickBtnEvBtnPrefix` /
+  `ClickBtnEvNotCamelCase` / `ClickBtnEvEmpty`.
 
 ---
 
@@ -257,6 +287,9 @@ class HomeActivity : BaseTrackedActivity() {
 
 ## Bước 5 — Log click từ UI
 
+Truyền enum constant trực tiếp — nếu sửa convention sai, Lint catch
+ngay tại dòng khai báo enum (chứ không lan ra mọi call-site):
+
 ```kotlin
 class HomeActivity : BaseTrackedActivity() {
     override fun screenName() = ScreenName.HOME
@@ -267,8 +300,9 @@ class HomeActivity : BaseTrackedActivity() {
 
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
             AnalyticsEventsUtils.logClickBtn(
-                screenName = ScreenName.HOME,
-                buttonName = ButtonName.REFRESH
+                screenName = HomeBtnEv.REFRESH.screenName,
+                buttonName = HomeBtnEv.REFRESH.buttonName,
+                popupName = HomeBtnEv.REFRESH.popupName,
             )
             refreshData()
         }
@@ -334,7 +368,7 @@ trên mỗi `Application.onCreate` (đã làm ở Bước 1, mục 3).
 
 ---
 
-## Bước 8 — Verify trên Firebase DebugView
+## Bước 8 — Verify trên Firebase DebugView + Lint
 
 ```bash
 adb shell setprop debug.firebase.analytics.app com.example.demo
@@ -348,6 +382,15 @@ chuyển màn. Trong vòng vài giây phải thấy:
 
 Trong build debug, mở Logcat lọc tag `AnalyticsEvents` để xem dump
 event ngay (do `isTestMode = true`).
+
+Chạy Lint để verify rule active:
+
+```bash
+./gradlew :app:lintDebug
+```
+
+Xanh = catalog hợp lệ. Đỏ với issue ID `[ClickBtnEvXxx from firebase-events-lint]`
+= có enum vi phạm convention — fix tại dòng được trỏ.
 
 ---
 
@@ -405,13 +448,18 @@ restore JSON đã lưu ở lần `init` kế tiếp.
 - [ ] `DemoApp` đã `init` SDK trong `onCreate`, có `sessionProvider`
       đo theo `ProcessLifecycleOwner`.
 - [ ] `AndroidManifest.xml` khai báo `android:name=".DemoApp"`.
-- [ ] Tồn tại `ScreenName`, `ButtonName`, `PopupName` constants.
+- [ ] Tồn tại interface `ClickBtnEv` (marker cho Lint).
+- [ ] Tồn tại `ScreenName`, `PopupName` constants, ít nhất 1 enum
+      (vd `HomeBtnEv`) implement `ClickBtnEv`.
 - [ ] Tồn tại `AnalyticsEventsUtils` wrapper; UI gọi qua wrapper.
 - [ ] `BaseTrackedActivity` (hoặc tương đương) tự log screen view.
-- [ ] Ít nhất 1 click button được log.
+- [ ] Ít nhất 1 click button được log, truyền enum constant chứ
+      không hard-code string.
 - [ ] Consent toggle ghi vào SharedPreferences và re-apply ở
       `Application.onCreate`.
 - [ ] Verify trên Firebase DebugView thấy ≥ 3 event khác nhau.
+- [ ] `./gradlew :app:lintDebug` chạy (xanh hoặc fail rõ với issue
+      ID `ClickBtnEv*`).
 - [ ] (Optional) Có 1 event project-specific implement `AnalyticsEvent`.
 - [ ] (Optional) Đăng ký `WebhookSender` cho QA mode.
 
@@ -423,6 +471,9 @@ restore JSON đã lưu ở lần `init` kế tiếp.
 |---|---|
 | Hard-code `"home"`, `"btn_refresh"` ở call-site | Typo silently break analytics. Dùng constants. |
 | Gọi `AnalyticsEvents.logXxx` trực tiếp ở UI | Mất layer chống đổi SDK; khó migrate sau này. Dùng `AnalyticsEventsUtils`. |
+| Tạo enum button **không** implement `ClickBtnEv` | Lint rule không fire → mất tầng compile-time bảo vệ convention. Mọi enum chứa `buttonName` phải implement `ClickBtnEv`. |
+| Đổi tên interface `ClickBtnEv` thành tên khác (vd `BtnEvent`) | Lint match theo simple name. Đổi tên = rule không fire. Giữ `ClickBtnEv` trong mọi project copy module. |
+| Suppress Lint issue `ClickBtnEv*` bằng `@Suppress` hoặc baseline | Bypass convention 200+ entries hiện có → gãy dashboard. Fix value, không suppress. |
 | Thêm enum project-specific vào `AllowPermission` trong SDK | Permission khác nhau theo app — định nghĩa enum riêng trong `:app`, gọi qua wrapper. |
 | Khởi tạo SDK ở `Activity.onCreate` | Phải khởi tạo trong `Application.onCreate`. |
 | Lưu `isEnabled` vào SDK rồi trông chờ persist | SDK **không** persist. App tự lưu + re-apply. |

@@ -12,8 +12,11 @@
 Bạn là một Android engineer hỗ trợ tôi tích hợp tracking events cho 1
 demo Android project. Demo này:
 
-- Đã include module `:firebase-events` trong `settings.gradle.kts`.
-- `app/build.gradle.kts` đã có `implementation(project(":firebase-events"))`.
+- Đã include module `:firebase-events` **và** `:firebase-events-lint`
+  trong `settings.gradle.kts`.
+- `app/build.gradle.kts` đã có `implementation(project(":firebase-events"))`
+  và `lintChecks(project(":firebase-events-lint"))` để enforce
+  convention `buttonName` ở compile time.
 - Đã có `google-services.json` đúng cho từng flavor.
 - Đã apply plugin `com.google.gms.google-services` và `com.google.firebase.crashlytics`.
 
@@ -27,8 +30,16 @@ YÊU CẦU CỤ THỂ
 1. Khảo sát trước:
    - Đọc `firebase-events/docs/samples/DEMO_IMPLEMENTATION_GUIDE.md` đầy đủ.
    - Đọc `firebase-events/docs/EVENT_CATALOG.md` để biết 13 event built-in.
+   - Đọc `firebase-events/docs/NAMING_CONVENTION.md` để hiểu 4 Lint
+     issue ID mà module `:firebase-events-lint` sẽ bắt.
    - Mở `app/src/main/AndroidManifest.xml` xem đã có class
      `Application` hay chưa, applicationId / package name là gì.
+   - Verify `app/build.gradle.kts` đã có
+     `lintChecks(project(":firebase-events-lint"))` và config
+     `android.lint.error += setOf("ClickBtnEvUnderscore",
+     "ClickBtnEvBtnPrefix", "ClickBtnEvNotCamelCase",
+     "ClickBtnEvEmpty")`. Nếu CHƯA có, thêm vào TRƯỚC khi sinh
+     code Phase D.
    - Liệt kê các Activity / Fragment hiện có trong demo (giới hạn 1
      mức depth, đừng đệ quy quá sâu).
 
@@ -42,8 +53,11 @@ YÊU CẦU CỤ THỂ
 3. Sau khi tôi trả lời, thực hiện:
    - Tạo / sửa Application class (Bước 1).
    - Update AndroidManifest nếu cần.
-   - Tạo package `event/` với `ScreenName.kt`, `ButtonName.kt`,
-     `PopupName.kt`, `AnalyticsEventsUtils.kt` (Bước 2-3).
+   - Tạo package `event/` với `ClickBtnEv.kt` (interface marker 3
+     props), `ScreenName.kt`, `ButtonName.kt`, `PopupName.kt`,
+     `AnalyticsEventsUtils.kt` (Bước 2-3). Lint rule trong
+     `:firebase-events-lint` chỉ fire trên enum implement interface
+     tên `ClickBtnEv` — phải tạo interface này để rule active.
    - Tạo `BaseTrackedActivity` (Bước 4) — đặt trong package
      `ui/base/` (tạo nếu chưa có).
    - Cho ÍT NHẤT 1 Activity hiện có extends `BaseTrackedActivity` và
@@ -54,8 +68,8 @@ YÊU CẦU CỤ THỂ
      `consent`, key `analytics_consent`.
 
 4. RÀNG BUỘC
-   - Không sửa file nào trong thư mục `firebase-events/` — đó là SDK
-     đã đóng.
+   - Không sửa file nào trong thư mục `firebase-events/` hoặc
+     `firebase-events-lint/` — đó là SDK + Lint module đã đóng.
    - Không gọi `AnalyticsEvents.logXxx` trực tiếp từ Activity /
      Fragment / ViewModel — luôn qua `AnalyticsEventsUtils`.
    - Không hard-code string screen/button ở call-site — luôn qua
@@ -80,8 +94,11 @@ YÊU CẦU CỤ THỂ
 ## Cách dùng
 
 1. **Trước khi paste prompt**: kiểm tra trong `settings.gradle.kts` đã
-   có `include(":firebase-events")`, trong `app/build.gradle.kts` đã
-   có `implementation(project(":firebase-events"))`, và đã copy
+   có `include(":firebase-events")` và `include(":firebase-events-lint")`,
+   trong `app/build.gradle.kts` đã có
+   `implementation(project(":firebase-events"))` +
+   `lintChecks(project(":firebase-events-lint"))` + block
+   `android.lint.error += setOf(...)` cho 4 issue ID, và đã copy
    `google-services.json` đúng vị trí.
 2. **Paste prompt** ở thư mục root project (`cd <demo-project>`).
 3. Agent sẽ hỏi 3 câu → trả lời → agent generate code theo đúng 8-10

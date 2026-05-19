@@ -149,10 +149,11 @@ class HomeActivity : AppCompatActivity() {
         AnalyticsUserProperties.logEventScreenOpen("home")
 
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
+            // buttonName: camelCase, no "_", no "btn" prefix — see NAMING_CONVENTION.md
             AnalyticsEvents.logClickBtnEv(
                 _ClickBtnEv(
                     screenName = "home",
-                    buttonName = "btn_refresh",
+                    buttonName = "refresh",
                     popupName = "",
                     time = secondsSinceAppOpen()
                 )

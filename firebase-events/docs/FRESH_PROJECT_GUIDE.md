@@ -16,10 +16,10 @@
 | Phase | Nội dung | Output |
 |---|---|---|
 | A. Prerequisites | Firebase project + `google-services.json` | File JSON đặt đúng chỗ |
-| B. Copy module | Bê thư mục `firebase-events/` vào project | Module hiện trong Project view |
-| C. Gradle wiring | `settings.gradle.kts` + `libs.versions.toml` + project plugins + app plugins | Sync Gradle xanh |
-| D. Code wiring | Application init + catalog + wrapper + BaseActivity | App build & log được 1 event |
-| E. Verify | DebugView + Logcat | Thấy event trên Firebase Console |
+| B. Copy module | Bê thư mục `firebase-events/` **và** `firebase-events-lint/` vào project | Hai module hiện trong Project view |
+| C. Gradle wiring | `settings.gradle.kts` + `libs.versions.toml` + project plugins + app plugins + lintChecks wiring | Sync Gradle xanh, `:app:lintDebug` chạy được |
+| D. Code wiring | Application init + catalog + wrapper + BaseActivity + interface `ClickBtnEv` | App build & log được 1 event, Lint rule active |
+| E. Verify | DebugView + Logcat + Lint | Thấy event trên Firebase Console, Lint catch convention vi phạm |
 
 ---
 
@@ -59,10 +59,12 @@
 
 ## Phase B — Copy module vào project
 
-Từ thư mục source `toh-weather`:
+Từ thư mục source upstream (`FirebaseEventFramework` hoặc `toh-weather`),
+copy **cả 2** module:
 
 ```bash
-cp -R /path/to/toh-weather/firebase-events /path/to/your-project/firebase-events
+cp -R /path/to/source/firebase-events       /path/to/your-project/firebase-events
+cp -R /path/to/source/firebase-events-lint  /path/to/your-project/firebase-events-lint
 ```
 
 Cây thư mục phải giống:
@@ -78,13 +80,18 @@ your-project/
 │   ├── proguard-rules.pro
 │   ├── consumer-rules.pro
 │   └── src/main/java/com/tohsoft/firebase_events/...
+├── firebase-events-lint/            ← module Lint enforce convention buttonName
+│   ├── build.gradle.kts
+│   ├── gradle.properties            ← bắt buộc: tắt auto-add kotlin-stdlib
+│   └── src/main/java/com/tohsoft/firebase_events/lint/...
 ├── gradle/
 │   └── libs.versions.toml
 └── settings.gradle.kts
 ```
 
-> **KHÔNG** sửa file `VERSION` — giữ nguyên để sau này diff được với
-> bản upstream nếu cần lấy bug fix.
+> **KHÔNG** sửa file `VERSION` của `:firebase-events` — giữ nguyên để
+> sau này diff được với bản upstream nếu cần lấy bug fix. Tương tự
+> KHÔNG sửa file trong `firebase-events-lint/`.
 
 ---
 
@@ -111,13 +118,15 @@ dependencyResolutionManagement {
 }
 rootProject.name = "YourProject"
 include(":app")
-include(":firebase-events")     // ← thêm dòng này
+include(":firebase-events")          // ← thêm dòng này
+include(":firebase-events-lint")     // ← thêm cả module Lint
 ```
 
 ### C2. Version catalog `gradle/libs.versions.toml`
 
-Module `firebase-events/build.gradle.kts` references các alias sau —
-project host **phải** có đủ trong `libs.versions.toml`:
+Module `firebase-events/build.gradle.kts` và `firebase-events-lint/build.gradle.kts`
+references các alias sau — project host **phải** có đủ trong
+`libs.versions.toml`:
 
 #### Bảng entries bắt buộc
 
@@ -135,6 +144,15 @@ project host **phải** có đủ trong `libs.versions.toml`:
 | Firebase Config | `libs.firebase.config` | `firebaseConfig` |
 | Firebase Analytics | `libs.firebase.analytics` | `firebaseAnalytics` |
 | Firebase Crashlytics | `libs.firebase.crashlytics` | `firebaseCrashlytics` |
+| Lint API (cho `:firebase-events-lint`) | `libs.lint.api` | `lintApi` (= AGP major + 23) |
+| Lint Checks (cho `:firebase-events-lint`) | `libs.lint.checks` | `lintApi` |
+| Lint Tests (cho `:firebase-events-lint`) | `libs.lint.tests` | `lintApi` |
+| Kotlin JVM plugin (cho `:firebase-events-lint`) | `libs.plugins.kotlinJvm` | `kotlin` |
+| Android Lint plugin (cho `:firebase-events-lint`) | `libs.plugins.androidLint` | `agp` |
+
+> **Công thức `lintApi`**: `lintApi = AGP_major + 23.0.0`. Ví dụ AGP
+> 8.6.0 → `lintApi = 31.6.0`; AGP 9.2.1 → `lintApi = 32.2.1`. Sai
+> version sẽ gây `NoSuchMethodError` ở runtime.
 
 #### Snippet copy-paste
 
@@ -148,6 +166,8 @@ agp = "8.6.0"
 kotlin = "2.1.0"
 pluginGoogleService = "4.4.2"
 pluginCrashlytics = "3.0.2"
+# Lint API: AGP major + 23. AGP 8.6.x → 31.6.x; AGP 9.2.x → 32.2.x.
+lintApi = "31.6.0"
 
 coreKtx = "1.13.1"
 appcompat = "1.7.0"
@@ -174,12 +194,20 @@ firebase-config = { group = "com.google.firebase", name = "firebase-config", ver
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "firebaseCrashlytics" }
 
+# Required by :firebase-events-lint module
+lint-api = { group = "com.android.tools.lint", name = "lint-api", version.ref = "lintApi" }
+lint-checks = { group = "com.android.tools.lint", name = "lint-checks", version.ref = "lintApi" }
+lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.ref = "lintApi" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "pluginGoogleService" }
 firebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "pluginCrashlytics" }
+# Required by :firebase-events-lint module
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+androidLint = { id = "com.android.lint", version.ref = "agp" }
 ```
 
 > **Nếu project KHÔNG dùng version catalog**: mở
@@ -189,7 +217,10 @@ firebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "p
 
 ### C3. Project-level `build.gradle.kts`
 
-Khai báo plugin (không apply ở root):
+Khai báo plugin (không apply ở root). 2 alias cuối (`kotlinJvm`,
+`androidLint`) BẮT BUỘC khai báo ở root — nếu không Gradle sẽ báo
+*"plugin already on the classpath with an unknown version"* khi
+`:firebase-events-lint` apply chúng:
 
 ```kotlin
 // build.gradle.kts (root)
@@ -199,6 +230,8 @@ plugins {
     alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.googleServices) apply false
     alias(libs.plugins.firebaseCrashlytics) apply false
+    alias(libs.plugins.kotlinJvm) apply false      // ← cho :firebase-events-lint
+    alias(libs.plugins.androidLint) apply false    // ← cho :firebase-events-lint
 }
 ```
 
@@ -237,11 +270,39 @@ dependencies {
     // SDK tracking
     implementation(project(":firebase-events"))
 
+    // Lint rules enforce convention `buttonName` ở compile time.
+    // Bắt buộc — KHÔNG bỏ qua nếu copy `firebase-events-lint/` về.
+    lintChecks(project(":firebase-events-lint"))
+
     // Firebase runtime — module đã expose qua api/implementation,
     // KHÔNG cần khai báo lại nếu module để là `api(...)`.
     // Module hiện để `implementation(...)`, nên app cần khai
     // báo các Firebase libs nó dùng trực tiếp (Crashlytics,
     // Analytics). Nếu app chỉ dùng wrapper, KHÔNG cần thêm gì.
+}
+```
+
+#### Promote Lint issue lên severity ERROR
+
+Mặc định 4 rule trong `:firebase-events-lint` đã có severity `ERROR`
+trong registry, nhưng vẫn nên khoá ở `app/build.gradle.kts` để build
+fail rõ ràng + không cho tester suppress qua baseline ngầm:
+
+```kotlin
+android {
+    namespace = "com.example.demo"
+    // ...
+
+    lint {
+        // Bắt buộc fail build nếu có vi phạm convention ClickBtnEv.
+        // Custom rules khai báo trong module :firebase-events-lint.
+        error += setOf(
+            "ClickBtnEvUnderscore",
+            "ClickBtnEvBtnPrefix",
+            "ClickBtnEvNotCamelCase",
+            "ClickBtnEvEmpty",
+        )
+    }
 }
 ```
 
@@ -346,11 +407,23 @@ Cần thêm permission Internet (cho Firebase/Crashlytics ping):
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
-### D2. Catalog constants
+### D2. Catalog constants + interface marker `ClickBtnEv`
 
-Tạo package `com.example.demo.event`:
+Tạo package `com.example.demo.event`. Bắt buộc tạo interface marker
+`ClickBtnEv` — Lint rule trong `:firebase-events-lint` match enum
+implement interface tên **`ClickBtnEv`** (any package), bỏ qua mọi
+enum khác:
 
 ```kotlin
+// event/ClickBtnEv.kt — interface marker để Lint rule hook vào
+package com.example.demo.event
+
+interface ClickBtnEv {
+    val screenName: String
+    val buttonName: String   // ← Lint rule check value của field này
+    val popupName: String
+}
+
 // event/ScreenName.kt
 object ScreenName {
     const val HOME = "home"
@@ -358,23 +431,30 @@ object ScreenName {
     const val SETTINGS = "settings"
 }
 
-// event/ButtonName.kt
-object ButtonName {
-    const val REFRESH = "btn_refresh"
-    const val SUBSCRIBE = "btn_subscribe"
-    const val CLOSE = "btn_close"
-}
-
 // event/PopupName.kt
 object PopupName {
-    const val RATE_DIALOG = "rate_dialog"
-    const val PERMISSION_REQUEST = "permission_request"
+    const val RATE_DIALOG = "rateDialog"
+    const val PERMISSION_REQUEST = "permissionRequest"
     const val NONE = ""
+}
+
+// event/HomeBtnEv.kt — 1 enum per screen, implement ClickBtnEv
+enum class HomeBtnEv(
+    override val screenName: String,
+    override val buttonName: String,
+    override val popupName: String,
+) : ClickBtnEv {
+    REFRESH(ScreenName.HOME, "refresh", ""),
+    SUBSCRIBE(ScreenName.HOME, "subscribe", ""),
+    RATE_OK(ScreenName.HOME, "ok", PopupName.RATE_DIALOG),
 }
 ```
 
-Quy ước (xem [`CONTEXT.md`](CONTEXT.md)): snake_case, ≤ 40 ký tự, bắt
-đầu bằng chữ cái, không prefix project slug.
+Quy ước value `buttonName` (xem [`NAMING_CONVENTION.md`](NAMING_CONVENTION.md)):
+camelCase, KHÔNG `_`, KHÔNG prefix `btn`, bắt đầu chữ thường.
+**Nếu vi phạm, build fail** — Lint sẽ báo issue ID
+`ClickBtnEvUnderscore` / `ClickBtnEvBtnPrefix` /
+`ClickBtnEvNotCamelCase` / `ClickBtnEvEmpty` ngay tại dòng khai báo.
 
 ### D3. Wrapper `AnalyticsEventsUtils`
 
@@ -470,6 +550,9 @@ abstract class BaseTrackedActivity : AppCompatActivity() {
 
 ### D5. Log click ở screen
 
+Truyền enum constant của catalog (`HomeBtnEv.REFRESH`) thay vì
+hard-code chuỗi — Lint catch convention vi phạm ngay khi sửa catalog:
+
 ```kotlin
 class HomeActivity : BaseTrackedActivity() {
     override fun screenName() = ScreenName.HOME
@@ -479,8 +562,9 @@ class HomeActivity : BaseTrackedActivity() {
         setContentView(R.layout.activity_home)
         findViewById<View>(R.id.btn_refresh).setOnClickListener {
             AnalyticsEventsUtils.logClickBtn(
-                screenName = ScreenName.HOME,
-                buttonName = ButtonName.REFRESH
+                screenName = HomeBtnEv.REFRESH.screenName,
+                buttonName = HomeBtnEv.REFRESH.buttonName,
+                popupName = HomeBtnEv.REFRESH.popupName,
             )
         }
     }
@@ -550,6 +634,29 @@ adb logcat -s AnalyticsEvents:V AnalyticsValidator:V
 - `AnalyticsValidator` — cảnh báo nếu vi phạm Firebase naming limits
   (≤ 40 char event name, ≤ 100 char string value, v.v.).
 
+### E5. Lint convention check
+
+```bash
+./gradlew :app:lintDebug
+```
+
+Nếu không có enum vi phạm: task xanh. Nếu vi phạm: build fail kèm
+issue ID `ClickBtnEv*` + dòng vi phạm. Để probe nhanh rule có active
+không, tạo 1 enum vi phạm tạm trong package `event/` rồi xóa:
+
+```kotlin
+private interface ClickBtnEv { /* 3 props */ }
+private enum class _Probe(
+    override val screenName: String,
+    override val buttonName: String,
+    override val popupName: String,
+) : ClickBtnEv {
+    BAD("home", "btn_sort_confirm", "")   // sẽ trigger ClickBtnEvUnderscore
+}
+```
+
+Lint task fail = wiring đúng.
+
 ---
 
 ## Checklist hoàn tất
@@ -561,29 +668,34 @@ adb logcat -s AnalyticsEvents:V AnalyticsValidator:V
 
 ### Phase B (Copy)
 - [ ] Thư mục `firebase-events/` đã ở cấp sibling của `app/`.
-- [ ] `VERSION` giữ nguyên.
+- [ ] Thư mục `firebase-events-lint/` đã ở cấp sibling của `app/`.
+- [ ] `VERSION` (của `:firebase-events`) giữ nguyên.
 
 ### Phase C (Gradle)
-- [ ] `settings.gradle.kts` có `include(":firebase-events")`.
-- [ ] `libs.versions.toml` đủ 12 entries bảng C2.
-- [ ] Root `build.gradle.kts` khai báo `googleServices` + `firebaseCrashlytics` plugin.
-- [ ] `app/build.gradle.kts` apply plugin + `implementation(project(":firebase-events"))`.
+- [ ] `settings.gradle.kts` có cả `include(":firebase-events")` và `include(":firebase-events-lint")`.
+- [ ] `libs.versions.toml` đủ entries bảng C2 (gồm `lintApi`, `lint-api`/`lint-checks`/`lint-tests`, plugin `kotlinJvm` + `androidLint`).
+- [ ] Root `build.gradle.kts` khai báo `googleServices` + `firebaseCrashlytics` + `kotlinJvm` + `androidLint` plugin (`apply false`).
+- [ ] `app/build.gradle.kts` apply plugin + `implementation(project(":firebase-events"))` + `lintChecks(project(":firebase-events-lint"))`.
+- [ ] `app/build.gradle.kts` có block `android.lint.error += setOf(... 4 issue ID ...)`.
 - [ ] Manifest có `INTERNET` + `ACCESS_NETWORK_STATE` permission.
 - [ ] `./gradlew :app:assembleDebug --dry-run` thành công.
 
 ### Phase D (Code)
 - [ ] `DemoApp` extends `Application`, `init` SDK trong `onCreate`.
 - [ ] Manifest có `android:name=".DemoApp"`.
-- [ ] Catalog `ScreenName` / `ButtonName` / `PopupName` đã tạo.
+- [ ] Catalog `ScreenName` / `PopupName` đã tạo.
+- [ ] Interface marker `ClickBtnEv` (3 props) đã tạo.
+- [ ] Ít nhất 1 enum (`HomeBtnEv` v.v.) implement `ClickBtnEv` cho 1 screen.
 - [ ] `AnalyticsEventsUtils` wrapper đã có.
 - [ ] `BaseTrackedActivity` đã có, ít nhất 1 activity extends nó.
-- [ ] Ít nhất 1 click button được log qua wrapper.
+- [ ] Ít nhất 1 click button được log qua wrapper, truyền enum constant chứ không hard-code string.
 - [ ] Consent toggle ghi vào SharedPreferences và re-apply.
 
 ### Phase E (Verify)
 - [ ] DebugView thấy ≥ 3 event khác loại.
 - [ ] Logcat thấy dump `AnalyticsEvents`.
 - [ ] Không có warning `AnalyticsValidator`.
+- [ ] `./gradlew :app:lintDebug` chạy xanh (hoặc fail với issue ID `ClickBtnEv*` khi probe vi phạm).
 
 ---
 

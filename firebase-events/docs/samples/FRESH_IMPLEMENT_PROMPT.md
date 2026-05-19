@@ -52,30 +52,59 @@ YÊU CẦU CỤ THỂ
    d) Tên 3–5 screen chính để bạn dựng catalog `ScreenName`.
 
 3. Sau khi tôi trả lời, thực hiện theo thứ tự:
-   - **Phase B**: `cp -R` thư mục `firebase-events/` vào project,
-     giữ nguyên file `VERSION`.
-   - **Phase C1**: thêm `include(":firebase-events")` vào
-     `settings.gradle.kts` (đặt sau `include(":app")` nếu chưa có).
+   - **Phase B**: `cp -R` thư mục `firebase-events/` **và**
+     `firebase-events-lint/` (sibling của `firebase-events/`) vào
+     project, giữ nguyên file `VERSION` của module SDK. KHÔNG được
+     bỏ qua `firebase-events-lint/` — đây là module Lint rule enforce
+     convention `buttonName`, được wire vào `:app` ở Phase C4.
+   - **Phase C1**: thêm `include(":firebase-events")` **và**
+     `include(":firebase-events-lint")` vào `settings.gradle.kts`
+     (đặt sau `include(":app")` nếu chưa có).
    - **Phase C2**: chỉ thêm các entry CÒN THIẾU vào
      `libs.versions.toml`. KHÔNG ghi đè version đã có; KHÔNG xoá
      entry không liên quan; KHÔNG nhân đôi. Trước khi sửa, in danh
-     sách entries sẽ thêm để tôi confirm.
+     sách entries sẽ thêm để tôi confirm. Phải bao gồm `lintApi`
+     version, `lint-api` / `lint-checks` / `lint-tests` libraries,
+     plugin alias `androidLint` + `kotlinJvm` (xem
+     `firebase-events-lint/build.gradle.kts` để biết alias cần
+     thiết).
    - **Phase C3**: thêm `alias(libs.plugins.googleServices) apply
-     false` và `alias(libs.plugins.firebaseCrashlytics) apply false`
-     vào root `build.gradle.kts` nếu chưa có.
-   - **Phase C4**: apply 2 plugin trên + thêm
-     `implementation(project(":firebase-events"))` trong
-     `app/build.gradle.kts`. Bổ sung permission `INTERNET` /
-     `ACCESS_NETWORK_STATE` vào manifest nếu chưa có.
+     false`, `alias(libs.plugins.firebaseCrashlytics) apply false`,
+     `alias(libs.plugins.kotlinJvm) apply false`,
+     `alias(libs.plugins.androidLint) apply false` vào root
+     `build.gradle.kts` nếu chưa có (4 alias `apply false`).
+   - **Phase C4**: apply 2 plugin Google Services + Crashlytics ở
+     `app/build.gradle.kts`, thêm `implementation(project(":firebase-events"))`,
+     thêm `lintChecks(project(":firebase-events-lint"))`, và config
+     promote 4 issue ID lên severity ERROR:
+     ```kotlin
+     android {
+         lint {
+             error += setOf(
+                 "ClickBtnEvUnderscore",
+                 "ClickBtnEvBtnPrefix",
+                 "ClickBtnEvNotCamelCase",
+                 "ClickBtnEvEmpty",
+             )
+         }
+     }
+     ```
+     Bổ sung permission `INTERNET` / `ACCESS_NETWORK_STATE` vào
+     manifest nếu chưa có.
    - **Phase D**: tạo `Application` class, catalog `event/`,
      `AnalyticsEventsUtils`, `BaseTrackedActivity`, áp dụng cho
-     ít nhất 1 Activity hiện có, thêm consent skeleton.
+     ít nhất 1 Activity hiện có, thêm consent skeleton. Tạo
+     interface marker `event/ClickBtnEv.kt` (3 props `screenName`,
+     `buttonName`, `popupName`) — Lint rule fire trên mọi enum
+     implement interface tên `ClickBtnEv` ở bất kỳ package nào.
    - **Phase E (text only)**: in cho tôi 2 lệnh adb để verify
-     (DebugView + Logcat).
+     (DebugView + Logcat), kèm gợi ý chạy `./gradlew :app:lintDebug`
+     để Lint catch vi phạm convention ngay tại compile time.
 
 4. RÀNG BUỘC TUYỆT ĐỐI
-   - KHÔNG sửa file nào trong thư mục `firebase-events/` sau khi
-     copy — đó là SDK đã đóng.
+   - KHÔNG sửa file nào trong thư mục `firebase-events/` hoặc
+     `firebase-events-lint/` sau khi copy — đó là SDK + Lint module
+     đã đóng.
    - KHÔNG ghi đè version đã có trong `libs.versions.toml`. Nếu
      version cũ < version guide đề xuất, BÁO tôi để tôi tự quyết.
    - KHÔNG commit `google-services.json` vào git — kiểm tra
@@ -91,7 +120,11 @@ YÊU CẦU CỤ THỂ
      nguyên `com.example.demo` trong guide.
 
 5. SAU KHI XONG
-   - In checklist 4 phase (A/B/C/D/E) với trạng thái ✅ / ⬜.
+   - In checklist 4 phase (A/B/C/D/E) với trạng thái ✅ / ⬜, bao
+     gồm cả checklist Lint: `:firebase-events-lint` đã include,
+     `lintChecks` đã wire, 4 issue ID đã promote ERROR,
+     `./gradlew :app:lintDebug` chạy được (xanh nếu chưa có enum
+     vi phạm).
    - Liệt kê các file đã thay đổi, định dạng `path:line` nếu sửa
      file có sẵn.
    - Nhắc tôi 3 việc còn lại cần làm bằng tay:

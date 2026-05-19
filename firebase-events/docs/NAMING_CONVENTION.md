@@ -220,15 +220,25 @@ class ClickBtnEvConventionTest {
 
 ### 7.2. Custom Lint rule (highlight ngay trong IDE)
 
-Tham khảo module `:firebase-events-lint` trong project Weather:
-- `ButtonNameConventionDetector` — UAST detector cho enum constants.
-- 4 Lint Issues: `ClickBtnEvUnderscore`, `ClickBtnEvBtnPrefix`, `ClickBtnEvNotCamelCase`, `ClickBtnEvEmpty`.
+Module `:firebase-events-lint` **ship cùng repo này** (sibling của
+`firebase-events/`). Khi copy module SDK sang project mới, **bắt buộc
+copy luôn** `firebase-events-lint/`:
+
+- `ButtonNameConventionDetector` — UAST detector match enum implement
+  interface tên **`ClickBtnEv`** (bất kỳ package nào).
+- 4 Lint Issues: `ClickBtnEvUnderscore`, `ClickBtnEvBtnPrefix`,
+  `ClickBtnEvNotCamelCase`, `ClickBtnEvEmpty`.
 
 Wire vào `:app`:
 
 ```kotlin
+// settings.gradle.kts
+include(":firebase-events")
+include(":firebase-events-lint")
+
 // app/build.gradle.kts
 dependencies {
+    implementation(project(":firebase-events"))
     lintChecks(project(":firebase-events-lint"))
 }
 
@@ -240,8 +250,21 @@ android {
 }
 ```
 
+Catalog phải có 1 interface `ClickBtnEv` để rule fire — Lint chỉ
+catch enum implement interface với simple name khớp `ClickBtnEv`:
+
+```kotlin
+// app/src/main/java/.../event/ClickBtnEv.kt
+interface ClickBtnEv {
+    val screenName: String
+    val buttonName: String
+    val popupName: String
+}
+```
+
 Trigger: `./gradlew :app:lintDebug` — Lint sẽ báo ERROR ngay tại dòng khai báo
-hằng nếu vi phạm.
+hằng nếu vi phạm. Trong IDE (Android Studio), Lint chạy realtime → vi
+phạm gạch đỏ ngay khi gõ value.
 
 ### 7.3. Trong runtime debug
 
@@ -256,6 +279,7 @@ không thay thế được test/Lint.
 - Reference function: [`Strings.convertSnakeCaseToCamelCase`](../src/main/java/com/tohsoft/firebase_events/utils/Strings.kt)
 - Event format: [`_ClickBtnEv`](../src/main/java/com/tohsoft/firebase_events/models/_ClickBtnEv.kt), [`_ScreenViewEv`](../src/main/java/com/tohsoft/firebase_events/models/_ScreenViewEv.kt)
 - Validator: [`EventNameValidator`](../src/main/java/com/tohsoft/firebase_events/utils/EventNameValidator.kt)
-- Catalog mẫu (project Weather): `app/src/main/java/com/tohsoft/weather/event/ClickBtnEv.kt`, `ScreenName.kt`
-- Test convention mẫu: `app/src/test/java/com/tohsoft/weather/event/ClickBtnEvConventionTest.kt`
-- Lint rule mẫu: `firebase-events-lint/` module
+- Lint module (ship cùng repo): `../../firebase-events-lint/`
+- Detector source: [`ButtonNameConventionDetector`](../../firebase-events-lint/src/main/java/com/tohsoft/firebase_events/lint/ButtonNameConventionDetector.kt)
+- Issue registry: [`ClickBtnEvIssueRegistry`](../../firebase-events-lint/src/main/java/com/tohsoft/firebase_events/lint/ClickBtnEvIssueRegistry.kt)
+- Detector test: [`ButtonNameConventionDetectorTest`](../../firebase-events-lint/src/test/java/com/tohsoft/firebase_events/lint/ButtonNameConventionDetectorTest.kt)

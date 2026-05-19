@@ -10,9 +10,9 @@ projects.
 |---|---|
 | **Event** | A single named action that gets logged to Firebase Analytics. Carries an optional `Bundle` of typed parameters. |
 | **User property** | A long-lived key/value on the user record (set once or rarely, persists across sessions). Use for segmentation, not for action counting. |
-| **Screen name** | A stable, snake_case identifier for a UI screen (e.g. `home`, `radar`, `settings_notification`). Used as the `screen_name` parameter on `screen_view_ev` and prefixes `click_btn_ev`. |
-| **Popup name** | A stable, snake_case identifier for an overlay/dialog within a screen (e.g. `rate_dialog`, `permission_request`). Empty when no popup is active. |
-| **Button name** | A stable, snake_case identifier for a tappable element (e.g. `btn_refresh`, `btn_subscribe`). |
+| **Screen name** | A stable, **camelCase** identifier for a UI screen (e.g. `home`, `radar`, `settingsNotification`). Used as the `screen_name` parameter on `screen_view_ev` and prefixes `click_btn_ev`. |
+| **Popup name** | A stable, **camelCase** identifier for an overlay/dialog within a screen (e.g. `rateDialog`, `permissionRequest`). Empty when no popup is active. |
+| **Button name** | A stable, **camelCase** identifier for a tappable element. NO `_`, NO `btn` prefix (e.g. `refresh`, `subscribe`, `sortConfirm` — NOT `btn_refresh`). See [`NAMING_CONVENTION.md`](NAMING_CONVENTION.md) — enforced by Lint rule `:firebase-events-lint`. |
 | **Session** | The time window from when the user foregrounds the app until it goes to background (or is killed). The SDK does not manage sessions itself — the host app passes a `sessionProvider` lambda to [`AnalyticsModule.init`](../src/main/java/com/tohsoft/firebase_events/AnalyticsModule.kt) that returns "time since app foregrounded" in millis. |
 | **App open** | Foregrounding the app (cold start OR resuming from background). Bumps the `appOpenedCount` counter. |
 | **Engagement level** | Bucketed count of ad clicks per user. Logged only when the count hits one of the threshold values: 0, 1, 5, 10, 20, 50, 100, 200, 500. |
@@ -39,10 +39,11 @@ projects.
 - Booleans: prefer `"0"` / `"1"` strings (Firebase's BigQuery export treats them more consistently than bool params).
 - Timestamps: prefer epoch seconds (`Int`) over formatted strings — easier to range-query.
 
-### Screen / button names
+### Screen / popup / button names
 
-- Snake_case, no spaces. Translate spaces and camelCase to underscores at the call site.
-- The SDK's `_ScreenViewEv` and `_ClickBtnEv` will convert them to CamelCase only when building the human-readable event-name string (see [`Strings.convertSnakeCaseToCamelCase`](../src/main/java/com/tohsoft/firebase_events/utils/Strings.kt)).
+- **camelCase, no `_`, no spaces.** See [`NAMING_CONVENTION.md`](NAMING_CONVENTION.md) for the full spec and the rationale.
+- `_ScreenViewEv` / `_ClickBtnEv` run the input through [`Strings.convertSnakeCaseToCamelCase`](../src/main/java/com/tohsoft/firebase_events/utils/Strings.kt). Both snake_case and camelCase produce the same PascalCase output, but only **camelCase input** is the supported convention — `:firebase-events-lint` rejects underscored values and `btn` prefixes.
+- Constants (LHS of `const val`) stay SCREAMING_SNAKE_CASE per Kotlin idiom; only the **value** (RHS) is camelCase.
 
 ## What the SDK is opinionated about
 
