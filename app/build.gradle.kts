@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.firebaseeventframework"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.firebaseeventframework"
@@ -32,12 +32,26 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        // Bắt buộc fail build nếu có vi phạm convention ClickBtnEv.
+        // Custom rules khai báo trong module :firebase-events-lint.
+        error += setOf(
+            "ClickBtnEvUnderscore",
+            "ClickBtnEvBtnPrefix",
+            "ClickBtnEvNotCamelCase",
+            "ClickBtnEvEmpty",
+        )
+    }
 }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(platform(libs.firebase.bom))
     implementation(project(":firebase-events"))
+
+    // Custom Lint rules enforce convention ClickBtnEv tại compile-time.
+    lintChecks(project(":firebase-events-lint"))
+
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)

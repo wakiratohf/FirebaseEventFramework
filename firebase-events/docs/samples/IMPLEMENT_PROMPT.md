@@ -18,14 +18,14 @@ demo Android project. Demo này:
 - Đã apply plugin `com.google.gms.google-services` và `com.google.firebase.crashlytics`.
 
 NHIỆM VỤ
-Đọc file `firebase-events/docs/DEMO_IMPLEMENTATION_GUIDE.md` trong
+Đọc file `firebase-events/docs/samples/DEMO_IMPLEMENTATION_GUIDE.md` trong
 project này và thực thi 10 bước trong đó để wire SDK vào demo app.
 Tuyệt đối tuân thủ tài liệu — đặc biệt là phần "Anti-patterns cần
 tránh" cuối file.
 
 YÊU CẦU CỤ THỂ
 1. Khảo sát trước:
-   - Đọc `firebase-events/docs/DEMO_IMPLEMENTATION_GUIDE.md` đầy đủ.
+   - Đọc `firebase-events/docs/samples/DEMO_IMPLEMENTATION_GUIDE.md` đầy đủ.
    - Đọc `firebase-events/docs/EVENT_CATALOG.md` để biết 13 event built-in.
    - Mở `app/src/main/AndroidManifest.xml` xem đã có class
      `Application` hay chưa, applicationId / package name là gì.

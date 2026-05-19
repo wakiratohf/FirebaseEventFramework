@@ -6,7 +6,7 @@
 > event đầu tiên trên Firebase DebugView.
 >
 > Nếu Gradle / `google-services.json` đã wire xong, hãy chuyển sang
-> [`DEMO_IMPLEMENTATION_GUIDE.md`](DEMO_IMPLEMENTATION_GUIDE.md) —
+> [`samples/DEMO_IMPLEMENTATION_GUIDE.md`](samples/DEMO_IMPLEMENTATION_GUIDE.md) —
 > tài liệu đó chỉ tập trung vào wiring code.
 
 ---
@@ -28,8 +28,8 @@
 ### A1. Tooling
 - Android Studio + AGP 8.x
 - JDK 17 (Project Structure → SDK Location → Gradle JDK = `Embedded JDK 17`)
-- Module dùng `minSdk 21` / `compileSdk 35` — project host phải có
-  `compileSdk ≥ 35`.
+- Module dùng `minSdk 21` / `compileSdk 36` — project host phải có
+  `compileSdk ≥ 36`.
 
 ### A2. Firebase project
 1. Vào [Firebase Console](https://console.firebase.google.com/) → **Add project**.
@@ -216,12 +216,12 @@ plugins {
 
 android {
     namespace = "com.example.demo"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.demo"
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -272,7 +272,7 @@ Phải xanh. Nếu lỗi thường gặp:
 ## Phase D — Code wiring
 
 Phase này giống hệt 8 bước của
-[`DEMO_IMPLEMENTATION_GUIDE.md`](DEMO_IMPLEMENTATION_GUIDE.md). Tóm
+[`samples/DEMO_IMPLEMENTATION_GUIDE.md`](samples/DEMO_IMPLEMENTATION_GUIDE.md). Tóm
 tắt nhanh:
 
 ### D1. Tạo `Application` class
@@ -505,7 +505,7 @@ SDK **không** persist `isEnabled`; app phải tự lưu và re-apply mỗi
 lần `Application.onCreate` (đã làm ở D1).
 
 > **Đầy đủ hơn?** Xem nguyên bản
-> [`DEMO_IMPLEMENTATION_GUIDE.md`](DEMO_IMPLEMENTATION_GUIDE.md) cho
+> [`samples/DEMO_IMPLEMENTATION_GUIDE.md`](samples/DEMO_IMPLEMENTATION_GUIDE.md) cho
 > custom event project-specific (`AnalyticsEvent`), webhook test-log
 > mode, Remote Config push `EventConfigs`.
 
@@ -608,10 +608,10 @@ adb logcat -s AnalyticsEvents:V AnalyticsValidator:V
 |---|---|
 | [`README.md`](../README.md) | Overview + SemVer + danh sách public API |
 | [`INTEGRATION.md`](INTEGRATION.md) | Setup Gradle (overlap với Phase B-C, ngắn hơn) |
-| [`SAMPLE_APP.md`](SAMPLE_APP.md) | Code mẫu Application + Activity + IAP + consent |
+| [`samples/SAMPLE_APP.md`](samples/SAMPLE_APP.md) | Code mẫu Application + Activity + IAP + consent |
 | [`EVENT_CATALOG.md`](EVENT_CATALOG.md) | Schema chi tiết 13 event + 9 user property |
 | [`PROJECT_EVENT_TEMPLATE.md`](PROJECT_EVENT_TEMPLATE.md) | Pattern thêm event project-specific |
 | [`CONFIGURATION.md`](CONFIGURATION.md) | `EventConfigs`, Remote Config, TestLogMode |
 | [`CONTEXT.md`](CONTEXT.md) | Glossary + naming convention |
-| [`DEMO_IMPLEMENTATION_GUIDE.md`](DEMO_IMPLEMENTATION_GUIDE.md) | Guide phiên bản "đã wire Gradle xong" (Phase D rút gọn) |
+| [`samples/DEMO_IMPLEMENTATION_GUIDE.md`](samples/DEMO_IMPLEMENTATION_GUIDE.md) | Guide phiên bản "đã wire Gradle xong" (Phase D rút gọn) |
 | [`MIGRATION.md`](MIGRATION.md) | Migration notes giữa các version bump |

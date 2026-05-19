@@ -36,7 +36,7 @@ YÊU CẦU CỤ THỂ
        * `applicationId` từ `app/build.gradle.kts`.
        * Đã có file `google-services.json` ở đâu chưa?
        * `compileSdk` / `minSdk` hiện tại — cảnh báo nếu
-         `compileSdk < 35` hoặc `minSdk < 21`.
+         `compileSdk < 36` hoặc `minSdk < 21`.
        * `libs.versions.toml` đã có entries nào trong bảng C2 của
          guide, thiếu entries nào.
        * Đã có Application class chưa, package name là gì.

@@ -19,3 +19,4 @@ dependencyResolutionManagement {
 rootProject.name = "FirebaseEventFramework"
 include(":app")
 include(":firebase-events")
+include(":firebase-events-lint")

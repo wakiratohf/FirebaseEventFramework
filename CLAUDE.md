@@ -89,5 +89,5 @@ The demo encodes the patterns each host project is expected to copy:
 
 - The SDK module has **zero `project(":...")` dependencies** by design (so it can be lifted into other repos). Don't add inter-module deps — use the adapter interfaces (`WebhookSender`, `AdRevenueLike`, `AnalyticsEvent`) instead.
 - Event names use lowercase snake_case, ≤ 40 chars, start with a letter. SDK-shipped events suffix `_ev`. Param keys ≤ 40 chars; string values ≤ 100 chars. Violations are flagged at runtime by `EventNameValidator` only when `isTestMode == true`.
-- `:firebase-events` targets `JDK 17`, `minSdk 21`, `compileSdk 35`. `:app` targets `JDK 11`, `minSdk 23`. Don't unify them without reason — the SDK's lower minSdk is part of its portability contract.
+- `:firebase-events` targets `JDK 17`, `minSdk 21`, `compileSdk 36`. `:app` targets `JDK 11`, `minSdk 23`. Don't unify them without reason — the SDK's lower minSdk is part of its portability contract.
 - Don't commit real `google-services.json` files for downstream projects. The one in `app/` here is for the demo only.

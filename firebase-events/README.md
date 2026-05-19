@@ -102,9 +102,13 @@ They belong in your app — see [`docs/PROJECT_EVENT_TEMPLATE.md`](docs/PROJECT_
 
 | File | Purpose |
 |---|---|
-| [`docs/CONTEXT.md`](docs/CONTEXT.md) | Domain language: what each term means, naming conventions |
+| [`docs/CONTEXT.md`](docs/CONTEXT.md) | Domain language: what each term means, glossary |
+| [`docs/NAMING_CONVENTION.md`](docs/NAMING_CONVENTION.md) | **Chốt convention** cho `screenName`, `popupName`, `buttonName` — dùng chung cho mọi project copy module này |
 | [`docs/INTEGRATION.md`](docs/INTEGRATION.md) | Step-by-step setup for a fresh project |
-| [`docs/SAMPLE_APP.md`](docs/SAMPLE_APP.md) | End-to-end "hello world" Kotlin code (Application + Activity + custom event + consent) |
+| [`docs/samples/SAMPLE_APP.md`](docs/samples/SAMPLE_APP.md) | End-to-end "hello world" Kotlin code (Application + Activity + custom event + consent) |
+| [`docs/samples/DEMO_IMPLEMENTATION_GUIDE.md`](docs/samples/DEMO_IMPLEMENTATION_GUIDE.md) | Wiring guide cho demo project khi Gradle đã sẵn sàng |
+| [`docs/samples/IMPLEMENT_PROMPT.md`](docs/samples/IMPLEMENT_PROMPT.md) | Prompt template để agent triển khai SDK trong demo project |
+| [`docs/samples/FRESH_IMPLEMENT_PROMPT.md`](docs/samples/FRESH_IMPLEMENT_PROMPT.md) | Prompt template để agent tích hợp SDK vào project từ con số 0 |
 | [`docs/EVENT_CATALOG.md`](docs/EVENT_CATALOG.md) | Every built-in event & user property, with bundle schemas |
 | [`docs/PROJECT_EVENT_TEMPLATE.md`](docs/PROJECT_EVENT_TEMPLATE.md) | How to add your project's own events without forking the SDK |
 | [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | EventConfigs toggle, Remote Config, TestLogMode, consent |

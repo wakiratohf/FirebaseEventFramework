@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.tohsoft.firebase_events"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21
@@ -40,9 +40,14 @@ dependencies {
     implementation(libs.firebase.config)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
-    // No project(":...") dependencies — this SDK is self-contained so it can
-    // be copy-pasted into other Android projects. See firebase-events/README.md
+    // No runtime project(":...") dependencies — this SDK is self-contained so it
+    // can be copy-pasted into other Android projects. See firebase-events/README.md
     // for the adapter pattern used to inject AdRevenue/Webhook implementations.
+    //
+    // Exception: `lintPublish` bundles lint rules into the published AAR (build-time
+    // only, no runtime classes added). When copy-pasting the SDK, also copy
+    // `:firebase-events-lint/` and keep this wiring.
+    lintPublish(project(":firebase-events-lint"))
 
     // Test (JVM only — these targets don't touch Bundle/Android runtime).
     testImplementation(libs.junit)
