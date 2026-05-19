@@ -57,15 +57,6 @@ The SDK ships a `WebhookSender` *interface*, not an implementation. `setWebhookS
 
 Same adapter pattern for ad revenue: `AdRevenueLike` is an interface so the SDK never depends on a specific ad-SDK class.
 
-### Firebase delivery is currently disabled — read before changing event flow
-
-Two production code paths into Firebase are commented out under a `// Radar ko log event & properties` marker:
-
-- `AnalyticsEvents.flushEvents` (`AnalyticsEvents.kt`) — the `GlobalScope.launch { FirebaseAnalytics.getInstance(context).logEvent(...) }` body is fully commented. `logEvent` still buffers up to 5 items and calls `flushEventsImmediate()`, but the flush is a no-op. So `isTestMode == false` builds neither send events to Firebase **nor** clear the buffer through to a transport — they just grow the list forever.
-- `AnalyticsUserProperties.logUserPropertyEv` (`AnalyticsUserProperties.kt`) — the entire body (test-mode dump + `FirebaseAnalytics.setUserProperty`) is commented. Every `AnalyticsUserProperties.logXxx` call is effectively a no-op past the `isEnabled` early-return, in **both** test and production modes.
-
-The "Radar" comment suggests a downstream project deliberately switched these off. Before re-enabling, check with the user — don't assume it's a bug. If you're debugging "why don't I see events / user properties in DebugView," this is almost certainly the reason and not your wiring.
-
 ### What the `:app` demo demonstrates
 
 The demo encodes the patterns each host project is expected to copy:

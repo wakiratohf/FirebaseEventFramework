@@ -214,8 +214,7 @@ object AnalyticsUserProperties {
     @SuppressLint("MissingPermission")
     private fun logUserPropertyEv(userPropertyEv: UserPropertyEv) {
         if (!AnalyticsModule.isEnabled) return
-        // Radar ko log event & properties
-        /*if (AnalyticsModule.isTestMode) {
+        if (AnalyticsModule.isTestMode) {
             val builder = StringBuilder("\n===== User Properties =====")
             builder.append("\nName: ").append(userPropertyEv.userPropertyName)
             builder.append("\nProperty: ").append(userPropertyEv.property)
@@ -227,6 +226,6 @@ object AnalyticsUserProperties {
 
         AnalyticsModule.getApplication()?.let { context ->
             FirebaseAnalytics.getInstance(context).setUserProperty(userPropertyEv.userPropertyName, userPropertyEv.property)
-        }*/
+        }
     }
 }
