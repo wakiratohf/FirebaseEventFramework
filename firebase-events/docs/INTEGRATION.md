@@ -3,6 +3,13 @@
 This is the step-by-step for dropping the SDK into a fresh Android project.
 Total time: ~15 minutes once Firebase is set up.
 
+> **Module ordering:** this guide wires the **base SDK** (`:firebase-events`).
+> If your project also needs the lifecycle helpers (`open_app_from_ev`,
+> `time_open_app_ev`, `app_exit`), integrate `:firebase-events` first
+> (this guide), then follow
+> [`app-event/docs/INTEGRATION.md`](../../app-event/docs/INTEGRATION.md).
+> The reverse order does not work — `:app-event` depends on this module.
+
 > If you are reading this from inside the `toh-weather` repo, the wiring is
 > already done — see [`AbsLifeCycleApplication.initAnalytics`](../../app/src/main/java/com/tohsoft/weather/AbsLifeCycleApplication.kt) for the reference call.
 
@@ -236,6 +243,20 @@ For project-specific events (screen names, button names, dialog names), see
 1. Define a `screen_*` / `btn_*` constants file in your app module.
 2. Write a thin wrapper (mirror of [`AnalyticsEventsUtils.kt`](../../app/src/main/java/com/tohsoft/weather/utils/extensions/AnalyticsEventsUtils.kt) in the reference project).
 3. Call the wrapper from your UI code; the wrapper calls the SDK.
+
+---
+
+## Step 7 — (Optional) Add `:app-event` for lifecycle events
+
+`:firebase-events` ships the formatters for `time_open_app_ev`,
+`app_exit`, and `open_app_from_ev` but **not** the Android lifecycle
+plumbing that fires them. To enable those events end-to-end, integrate
+the companion `:app-event` module after finishing the steps above —
+follow [`app-event/docs/INTEGRATION.md`](../../app-event/docs/INTEGRATION.md).
+
+The module provides a one-line installer
+(`AppEventsInstaller.install(application)`) plus explicit-call APIs
+for projects with custom lifecycle requirements.
 
 ---
 

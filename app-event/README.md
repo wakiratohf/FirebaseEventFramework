@@ -22,7 +22,8 @@ across products without dragging Android UI assumptions along.
 | `time_open_app_ev` lifecycle helper | [`TimeOpenAppTracker`](src/main/java/com/tohsoft/app_event/TimeOpenAppTracker.kt) |
 | `app_exit` lifecycle helper (debounced, last-screen aware) | [`AppExitTracker`](src/main/java/com/tohsoft/app_event/AppExitTracker.kt) |
 | One-line drop-in installer for both lifecycle events | [`AppEventsInstaller`](src/main/java/com/tohsoft/app_event/AppEventsInstaller.kt) |
-| Integration recipes | [`docs/OPEN_APP_FROM_GUIDE.md`](docs/OPEN_APP_FROM_GUIDE.md) · [`docs/TIME_OPEN_APP_GUIDE.md`](docs/TIME_OPEN_APP_GUIDE.md) · [`docs/APP_EXIT_GUIDE.md`](docs/APP_EXIT_GUIDE.md) |
+| Wiring this module | [`docs/INTEGRATION.md`](docs/INTEGRATION.md) |
+| Per-event recipes | [`docs/OPEN_APP_FROM_GUIDE.md`](docs/OPEN_APP_FROM_GUIDE.md) · [`docs/TIME_OPEN_APP_GUIDE.md`](docs/TIME_OPEN_APP_GUIDE.md) · [`docs/APP_EXIT_GUIDE.md`](docs/APP_EXIT_GUIDE.md) |
 
 ## Choosing high-level vs low-level API
 

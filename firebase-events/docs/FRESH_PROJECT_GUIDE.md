@@ -20,6 +20,7 @@
 | C. Gradle wiring | `settings.gradle.kts` + `libs.versions.toml` + project plugins + app plugins + lintChecks wiring | Sync Gradle xanh, `:app:lintDebug` chạy được |
 | D. Code wiring | Application init + catalog + wrapper + BaseActivity + interface `ClickBtnEv` | App build & log được 1 event, Lint rule active |
 | E. Verify | DebugView + Logcat + Lint | Thấy event trên Firebase Console, Lint catch convention vi phạm |
+| F. (Optional) `:app-event` | Cài đặt module lifecycle cho `time_open_app_ev`, `app_exit`, `open_app_from_ev` | Có thêm 3 sự kiện lifecycle, vẫn dùng cùng `AnalyticsEvents` |
 
 ---
 
@@ -656,6 +657,43 @@ private enum class _Probe(
 ```
 
 Lint task fail = wiring đúng.
+
+---
+
+## Phase F — (Optional) Tracking lifecycle qua `:app-event`
+
+`:firebase-events` chỉ ship formatter + Firebase log layer cho ba sự
+kiện lifecycle (`time_open_app_ev`, `app_exit`, `open_app_from_ev`).
+Phần Android plumbing (`ActivityLifecycleCallbacks`,
+`ProcessLifecycleOwner`, intent extras, debounce…) nằm ở module riêng
+`:app-event`.
+
+**Nếu project của bạn cần các sự kiện trên** (đa số app TOHSOFT đều
+cần), tiếp tục với:
+[`../../app-event/docs/INTEGRATION.md`](../../app-event/docs/INTEGRATION.md).
+
+Tóm tắt nhanh các bước (chi tiết xem file trên):
+
+1. **Copy module**: `cp -R /path/to/app-event your-project/app-event`.
+2. **Gradle wiring**: thêm `include(":app-event")` vào
+   `settings.gradle.kts`; thêm `lifecycleProcess` version + library
+   alias `androidx-lifecycle-process` vào `libs.versions.toml`;
+   `implementation(project(":app-event"))` trong `app/build.gradle.kts`.
+3. **Lưu timestamp khởi động** ngay sau `AnalyticsModule.init`:
+   `FirebasePrefs.saveAppOpenedTimestamp(this, System.currentTimeMillis())`.
+   Thiếu bước này → `app_exit` không bao giờ log.
+4. **Chọn 1 pattern**: thường là `AppEventsInstaller.install(this)`
+   (Pattern A, 1 dòng). Project có lifecycle phức tạp dùng Pattern
+   B/C/D theo
+   [`TIME_OPEN_APP_GUIDE.md`](../../app-event/docs/TIME_OPEN_APP_GUIDE.md)
+   và [`APP_EXIT_GUIDE.md`](../../app-event/docs/APP_EXIT_GUIDE.md).
+5. **`open_app_from_ev`**: wire `OpenAppFromIntent.putSource` ở
+   producer (notification, widget, shortcut) và
+   `OpenAppFromIntent.logFromIntent` ở launcher Activity. Chi tiết:
+   [`OPEN_APP_FROM_GUIDE.md`](../../app-event/docs/OPEN_APP_FROM_GUIDE.md).
+
+⚠ Không trộn `AppEventsInstaller.install` với explicit tracker calls
+(Pattern B/C/D) — sự kiện sẽ log hai lần.
 
 ---
 
