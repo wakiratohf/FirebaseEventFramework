@@ -23,6 +23,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".TaskListActivity"
+            android:exported="false"
+            android:label="@string/title_tasks"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.FirebaseEventFramework" />
+        <activity
+            android:name=".TimerActivity"
+            android:exported="false"
+            android:label="@string/title_timer"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.FirebaseEventFramework" />
+        <activity
+            android:name=".StatsActivity"
+            android:exported="false"
+            android:label="@string/title_stats"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.FirebaseEventFramework" />
     </application>
 
 </manifest>

@@ -1,22 +1,24 @@
 package com.example.firebaseeventframework
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.firebaseeventframework.event.AnalyticsEventsUtils
-import com.example.firebaseeventframework.event.ButtonName
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
@@ -33,12 +35,9 @@ class MainActivity : BaseTrackedActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     HomeContent(
                         modifier = Modifier.padding(innerPadding),
-                        onRefreshClick = {
-                            AnalyticsEventsUtils.logClickBtn(
-                                screenName = ScreenName.HOME,
-                                buttonName = ButtonName.REFRESH
-                            )
-                        }
+                        onOpenTasks = { startActivity(Intent(this, TaskListActivity::class.java)) },
+                        onOpenTimer = { startActivity(Intent(this, TimerActivity::class.java)) },
+                        onOpenStats = { startActivity(Intent(this, StatsActivity::class.java)) }
                     )
                 }
             }
@@ -46,18 +45,41 @@ class MainActivity : BaseTrackedActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeContent(modifier: Modifier = Modifier, onRefreshClick: () -> Unit = {}) {
+fun HomeContent(
+    modifier: Modifier = Modifier,
+    onOpenTasks: () -> Unit = {},
+    onOpenTimer: () -> Unit = {},
+    onOpenStats: () -> Unit = {}
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Hello Android!")
-        Button(onClick = onRefreshClick) {
-            Text(text = "Refresh")
+        Text(
+            text = "Focus Todo",
+            style = MaterialTheme.typography.headlineMedium
+        )
+        NavCard(title = "Tasks", subtitle = "Quản lý công việc", onClick = onOpenTasks)
+        NavCard(title = "Timer", subtitle = "Pomodoro 25/5", onClick = onOpenTimer)
+        NavCard(title = "Stats", subtitle = "Thống kê 7 ngày", onClick = onOpenStats)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NavCard(title: String, subtitle: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleLarge)
+            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
