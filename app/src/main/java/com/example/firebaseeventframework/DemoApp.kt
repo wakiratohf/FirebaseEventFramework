@@ -7,8 +7,10 @@ import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import com.example.firebaseeventframework.data.DatabaseProvider
 import com.example.firebaseeventframework.event.ConsentManager
+import com.tohsoft.app_event.AppEventsInstaller
 import com.tohsoft.firebase_events.AnalyticsModule
 import com.tohsoft.firebase_events.AnalyticsUserProperties
+import com.tohsoft.firebase_events.utils.FirebasePrefs
 
 class DemoApp : Application() {
 
@@ -37,6 +39,7 @@ class DemoApp : Application() {
             override fun onActivityStarted(activity: Activity) {
                 if (startedActivities == 0) {
                     foregroundedAt = System.currentTimeMillis()
+                    FirebasePrefs.saveAppOpenedTimestamp(this@DemoApp, foregroundedAt)
                 }
                 startedActivities++
             }
@@ -56,6 +59,8 @@ class DemoApp : Application() {
         val consented = getSharedPreferences(ConsentManager.PREFS_NAME, Context.MODE_PRIVATE)
             .getBoolean(ConsentManager.KEY_ANALYTICS_CONSENT, true)
         AnalyticsModule.setEnabled(consented)
+
+        AppEventsInstaller.install(this)
 
         val appVersion = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""
