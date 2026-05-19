@@ -221,8 +221,7 @@ object AnalyticsEvents {
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun flushEvents(list: List<AnalyticsEvent>) {
-        // Radar ko log event & properties
-        /*GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+        GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
             mutex.withLock {
                 list.forEach { analyticsEvent ->
                     AnalyticsModule.getApplication()?.let { context ->
@@ -230,7 +229,7 @@ object AnalyticsEvents {
                     }
                 }
             }
-        }*/
+        }
     }
 
     private data class AnalyticsEvent(
