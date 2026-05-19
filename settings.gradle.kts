@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "FirebaseEventFramework"
 include(":app")
- 
+include(":firebase-events")
