@@ -8,6 +8,7 @@ import android.os.Bundle
 import androidx.core.os.ConfigurationCompat
 import com.example.firebaseeventframework.data.DatabaseProvider
 import com.example.firebaseeventframework.event.ConsentManager
+import com.example.firebaseeventframework.event.ScreenName
 import com.tohsoft.app_event.AppEventsInstaller
 import com.tohsoft.firebase_events.AnalyticsModule
 import com.tohsoft.firebase_events.AnalyticsUserProperties
@@ -61,7 +62,17 @@ class DemoApp : Application() {
             .getBoolean(ConsentManager.KEY_ANALYTICS_CONSENT, true)
         AnalyticsModule.setEnabled(consented)
 
-        AppEventsInstaller.install(this)
+        // Map mỗi Activity sang ScreenName catalog để last_active_screen của
+        // app_exit khớp với screen_view_ev (app-event/docs/INTEGRATION.md Step 5).
+        AppEventsInstaller.install(this) { activity ->
+            when (activity) {
+                is MainActivity -> ScreenName.HOME
+                is TaskListActivity -> ScreenName.TASKS
+                is TimerActivity -> ScreenName.TIMER
+                is StatsActivity -> ScreenName.STATS
+                else -> activity.javaClass.simpleName
+            }
+        }
 
         val appVersion = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""

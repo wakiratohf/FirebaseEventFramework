@@ -2,7 +2,6 @@ package com.example.firebaseeventframework
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -41,10 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseeventframework.data.Task
 import com.example.firebaseeventframework.data.TaskStatus
+import com.example.firebaseeventframework.event.ScreenName
+import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.example.firebaseeventframework.viewmodel.TaskListViewModel
 
-class TaskListActivity : ComponentActivity() {
+class TaskListActivity : BaseTrackedActivity() {
+
+    override fun screenName(): String = ScreenName.TASKS
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -1,7 +1,6 @@
 package com.example.firebaseeventframework
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -28,14 +27,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseeventframework.data.SessionType
+import com.example.firebaseeventframework.event.ScreenName
+import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.example.firebaseeventframework.viewmodel.TimerViewModel
 
-class TimerActivity : ComponentActivity() {
+class TimerActivity : BaseTrackedActivity() {
 
     companion object {
         const val EXTRA_TASK_ID = "extra_task_id"
     }
+
+    override fun screenName(): String = ScreenName.TIMER
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

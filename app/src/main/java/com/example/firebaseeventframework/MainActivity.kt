@@ -19,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.firebaseeventframework.event.AppOpenSource
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
+import com.tohsoft.app_event.OpenAppFromIntent
 
 class MainActivity : BaseTrackedActivity() {
 
@@ -29,6 +31,9 @@ class MainActivity : BaseTrackedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // open_app_from_ev: cold start (launcher icon → ACTION_MAIN, hoặc
+        // notification/widget đã tag EXTRA_OPEN_FROM qua OpenAppFromIntent.putSource).
+        OpenAppFromIntent.logFromIntent(intent, AppOpenSource.APP_ICON)
         enableEdgeToEdge()
         setContent {
             FirebaseEventFrameworkTheme {
@@ -42,6 +47,14 @@ class MainActivity : BaseTrackedActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // launchMode=singleTop: notification/widget tap khi task còn sống đi vào
+        // onNewIntent thay vì onCreate — phải log ở cả hai nơi.
+        setIntent(intent)
+        OpenAppFromIntent.logFromIntent(intent, AppOpenSource.APP_ICON)
     }
 }
 
