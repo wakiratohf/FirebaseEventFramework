@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Bundle
+import androidx.core.os.ConfigurationCompat
 import com.example.firebaseeventframework.data.DatabaseProvider
 import com.example.firebaseeventframework.event.ConsentManager
 import com.tohsoft.app_event.AppEventsInstaller
@@ -67,7 +68,7 @@ class DemoApp : Application() {
         }.getOrDefault("")
 
         AnalyticsUserProperties.logLanguageAndAppVersion(
-            language = resources.configuration.locales[0].language,
+            language = ConfigurationCompat.getLocales(resources.configuration)[0]?.language ?: "",
             appVersion = appVersion
         )
     }

@@ -3,7 +3,7 @@
 App-level event helpers that wrap Android plumbing (intents, lifecycle,
 shortcuts) around the pure Firebase log layer in `:firebase-events`.
 
-**Version:** see [`VERSION`](VERSION) · **minSdk 21 · compileSdk 35 · JDK 17**
+**Version:** see [`VERSION`](VERSION) · **minSdk 21 · compileSdk 36 · JDK 17**
 
 ## Why this module exists
 
@@ -24,6 +24,7 @@ across products without dragging Android UI assumptions along.
 | One-line drop-in installer for both lifecycle events | [`AppEventsInstaller`](src/main/java/com/tohsoft/app_event/AppEventsInstaller.kt) |
 | Wiring this module | [`docs/INTEGRATION.md`](docs/INTEGRATION.md) |
 | Per-event recipes | [`docs/OPEN_APP_FROM_GUIDE.md`](docs/OPEN_APP_FROM_GUIDE.md) · [`docs/TIME_OPEN_APP_GUIDE.md`](docs/TIME_OPEN_APP_GUIDE.md) · [`docs/APP_EXIT_GUIDE.md`](docs/APP_EXIT_GUIDE.md) |
+| `screen_view_ev` + `click_btn_ev` (screen tracking, lives in `:app`) | [`docs/SCREEN_VIEW_GUIDE.md`](docs/SCREEN_VIEW_GUIDE.md) |
 
 ## Choosing high-level vs low-level API
 

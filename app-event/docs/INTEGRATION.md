@@ -9,6 +9,9 @@ This is the wiring for the lifecycle helpers (`time_open_app_ev`,
 > - **Wiring (you are here)** → this file.
 > - **Per-event recipes** → [`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md),
 >   [`TIME_OPEN_APP_GUIDE.md`](TIME_OPEN_APP_GUIDE.md), [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md).
+> - **Screen tracking** (`screen_view_ev` + `click_btn_ev`, implemented in
+>   `:app` — not this module) → [`SCREEN_VIEW_GUIDE.md`](SCREEN_VIEW_GUIDE.md).
+>   Not wired by this guide; see that playbook if you also need it.
 
 ---
 
@@ -176,6 +179,11 @@ brief overlays you don't want to attribute the exit to. You can also
 call `AppExitTracker.setLastActiveScreen(name)` from your own screen
 helper; the last call wins.
 
+> 💡 If your app also implements screen tracking
+> ([`SCREEN_VIEW_GUIDE.md`](SCREEN_VIEW_GUIDE.md)), reuse its `ScreenName`
+> catalog here instead of hard-coding strings — one source of truth for
+> screen names keeps `last_active_screen` consistent with `screen_view_ev`.
+
 ---
 
 ## Step 6 — Verify
@@ -226,6 +234,8 @@ being sent to Firebase — handy for offline verification.
 - Per-event guides: [`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md),
   [`TIME_OPEN_APP_GUIDE.md`](TIME_OPEN_APP_GUIDE.md),
   [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md).
+- Screen tracking playbook (lives in `:app`):
+  [`SCREEN_VIEW_GUIDE.md`](SCREEN_VIEW_GUIDE.md).
 - Underlying log layer (`:firebase-events`):
   [`AnalyticsEvents`](../../firebase-events/src/main/java/com/tohsoft/firebase_events/AnalyticsEvents.kt),
   schema in [`EVENT_CATALOG.md`](../../firebase-events/docs/EVENT_CATALOG.md).

@@ -50,7 +50,7 @@ object AnalyticsEventsUtils {
     }
 
     private fun secondsSinceAppOpen(): Int {
-        val ts = AnalyticsModule.getAppOpenedTimestamp() ?: return 0
-        return (ts / 1000).toInt()
+        val openedAt = AnalyticsModule.getAppOpenedTimestamp() ?: return 0
+        return ((System.currentTimeMillis() - openedAt) / 1000).toInt()
     }
 }
