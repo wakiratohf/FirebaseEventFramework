@@ -45,6 +45,15 @@ object AnalyticsEventsUtils {
         )
     }
 
+    /**
+     * Overload nên dùng tại call-site: truyền enum [ClickBtnEv] thay vì 3 String
+     * rời, để convention drift bị bắt ngay tại chỗ khai báo enum (bởi Lint),
+     * không phải ở từng nơi gọi.
+     */
+    fun logClickBtn(event: ClickBtnEv) {
+        logClickBtn(event.screenName, event.buttonName, event.popupName)
+    }
+
     fun logProjectEvent(event: AnalyticsEvent) {
         AnalyticsEvents.logEvent(event)
     }

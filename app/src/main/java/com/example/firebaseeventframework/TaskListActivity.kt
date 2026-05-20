@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseeventframework.data.Task
 import com.example.firebaseeventframework.data.TaskStatus
+import com.example.firebaseeventframework.event.AnalyticsEventsUtils
 import com.example.firebaseeventframework.event.ScreenName
+import com.example.firebaseeventframework.event.TaskListBtnEv
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.example.firebaseeventframework.viewmodel.TaskListViewModel
@@ -83,7 +85,10 @@ private fun TaskListScreen(
         topBar = { TopAppBar(title = { Text(text = "Tasks") }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.ADD_TASK)
+                    showAddDialog = true
+                },
                 text = { Text("Add task") },
                 icon = {}
             )
@@ -100,9 +105,18 @@ private fun TaskListScreen(
                     items(items = tasks, key = { it.id }) { task ->
                         TaskRow(
                             task = task,
-                            onToggle = { viewModel.toggleDone(task) },
-                            onOpenTimer = { onOpenTimer(task.id) },
-                            onDelete = { pendingDelete = task }
+                            onToggle = {
+                                AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.TOGGLE_DONE)
+                                viewModel.toggleDone(task)
+                            },
+                            onOpenTimer = {
+                                AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.OPEN_TIMER)
+                                onOpenTimer(task.id)
+                            },
+                            onDelete = {
+                                AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.DELETE)
+                                pendingDelete = task
+                            }
                         )
                         HorizontalDivider()
                     }
@@ -114,10 +128,14 @@ private fun TaskListScreen(
     if (showAddDialog) {
         AddTaskDialog(
             onConfirm = { title ->
+                AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.ADD_CONFIRM)
                 viewModel.addTask(title)
                 showAddDialog = false
             },
-            onDismiss = { showAddDialog = false }
+            onDismiss = {
+                AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.ADD_CANCEL)
+                showAddDialog = false
+            }
         )
     }
 
@@ -126,12 +144,16 @@ private fun TaskListScreen(
             onDismissRequest = { pendingDelete = null },
             confirmButton = {
                 TextButton(onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.DELETE_CONFIRM)
                     viewModel.delete(target)
                     pendingDelete = null
                 }) { Text("Xóa") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("Hủy") }
+                TextButton(onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.DELETE_CANCEL)
+                    pendingDelete = null
+                }) { Text("Hủy") }
             },
             title = { Text("Xóa task?") },
             text = { Text("Task \"${target.title}\" sẽ bị xóa.") }

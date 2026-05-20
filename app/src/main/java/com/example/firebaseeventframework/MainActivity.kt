@@ -19,7 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.firebaseeventframework.event.AnalyticsEventsUtils
 import com.example.firebaseeventframework.event.AppOpenSource
+import com.example.firebaseeventframework.event.HomeBtnEv
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
@@ -40,9 +42,18 @@ class MainActivity : BaseTrackedActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     HomeContent(
                         modifier = Modifier.padding(innerPadding),
-                        onOpenTasks = { startActivity(Intent(this, TaskListActivity::class.java)) },
-                        onOpenTimer = { startActivity(Intent(this, TimerActivity::class.java)) },
-                        onOpenStats = { startActivity(Intent(this, StatsActivity::class.java)) }
+                        onOpenTasks = {
+                            AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_TASKS)
+                            startActivity(Intent(this, TaskListActivity::class.java))
+                        },
+                        onOpenTimer = {
+                            AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_TIMER)
+                            startActivity(Intent(this, TimerActivity::class.java))
+                        },
+                        onOpenStats = {
+                            AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_STATS)
+                            startActivity(Intent(this, StatsActivity::class.java))
+                        }
                     )
                 }
             }

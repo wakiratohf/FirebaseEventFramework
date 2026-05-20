@@ -27,7 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseeventframework.data.SessionType
+import com.example.firebaseeventframework.event.AnalyticsEventsUtils
 import com.example.firebaseeventframework.event.ScreenName
+import com.example.firebaseeventframework.event.TimerBtnEv
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.example.firebaseeventframework.viewmodel.TimerViewModel
@@ -79,7 +81,10 @@ private fun TimerScreen(taskId: Long?, viewModel: TimerViewModel = viewModel()) 
                 SessionType.entries.forEach { type ->
                     FilterChip(
                         selected = state.sessionType == type,
-                        onClick = { viewModel.changeSessionType(type) },
+                        onClick = {
+                            AnalyticsEventsUtils.logClickBtn(TimerBtnEv.CHANGE_SESSION_TYPE)
+                            viewModel.changeSessionType(type)
+                        },
                         enabled = !state.running,
                         label = { Text(type.displayLabel()) }
                     )
@@ -95,17 +100,32 @@ private fun TimerScreen(taskId: Long?, viewModel: TimerViewModel = viewModel()) 
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!state.running) {
-                    Button(onClick = { viewModel.start() }) { Text("Start") }
+                    Button(onClick = {
+                        AnalyticsEventsUtils.logClickBtn(TimerBtnEv.START)
+                        viewModel.start()
+                    }) { Text("Start") }
                 } else {
-                    OutlinedButton(onClick = { viewModel.pause() }) { Text("Pause") }
+                    OutlinedButton(onClick = {
+                        AnalyticsEventsUtils.logClickBtn(TimerBtnEv.PAUSE)
+                        viewModel.pause()
+                    }) { Text("Pause") }
                 }
-                OutlinedButton(onClick = { viewModel.reset() }) { Text("Reset") }
-                OutlinedButton(onClick = { viewModel.skip() }) { Text("Skip") }
+                OutlinedButton(onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TimerBtnEv.RESET)
+                    viewModel.reset()
+                }) { Text("Reset") }
+                OutlinedButton(onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TimerBtnEv.SKIP)
+                    viewModel.skip()
+                }) { Text("Skip") }
             }
 
             state.linkedTask?.let {
                 Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = { viewModel.completeLinkedTask() }) {
+                OutlinedButton(onClick = {
+                    AnalyticsEventsUtils.logClickBtn(TimerBtnEv.MARK_TASK_DONE)
+                    viewModel.completeLinkedTask()
+                }) {
                     Text("Mark task done")
                 }
             }
