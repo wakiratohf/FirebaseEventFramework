@@ -8,7 +8,8 @@ This is the wiring for the lifecycle helpers (`time_open_app_ev`,
 > - **Why this module exists** → [`../README.md`](../README.md).
 > - **Wiring (you are here)** → this file.
 > - **Per-event recipes** → [`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md),
->   [`TIME_OPEN_APP_GUIDE.md`](TIME_OPEN_APP_GUIDE.md), [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md).
+>   [`TIME_OPEN_APP_GUIDE.md`](TIME_OPEN_APP_GUIDE.md), [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md),
+>   [`RATE_DIALOG_GUIDE.md`](RATE_DIALOG_GUIDE.md).
 > - **Screen tracking** (`screen_view_ev` + `click_btn_ev`, implemented in
 >   `:app` — not this module) → [`SCREEN_VIEW_GUIDE.md`](SCREEN_VIEW_GUIDE.md).
 >   Not wired by this guide; see that playbook if you also need it.
@@ -151,9 +152,14 @@ Detailed code for each pattern lives in the per-event guides:
 > via `ProcessLifecycleOwner`; an extra trigger would log the event
 > twice per session.
 
-For `open_app_from_ev` there is no installer (each app's launch
-sources differ). Wire your intent producers + launcher Activity per
-[`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md).
+The other two events are **call-based** (no installer): fire them from your
+own code where the event happens.
+
+- `open_app_from_ev` — each app's launch sources differ; wire your intent
+  producers + launcher Activity per [`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md).
+- `show_rate_dialog_ev` — call `RateDialogEventTracker.logShowRateDialog(...)`
+  from each rate-dialog button handler per
+  [`RATE_DIALOG_GUIDE.md`](RATE_DIALOG_GUIDE.md).
 
 ---
 
@@ -230,15 +236,18 @@ being sent to Firebase — handy for offline verification.
   [`AppExitTracker`](../src/main/java/com/tohsoft/app_event/AppExitTracker.kt),
   [`TimeOpenAppTracker`](../src/main/java/com/tohsoft/app_event/TimeOpenAppTracker.kt),
   [`OpenAppFromIntent`](../src/main/java/com/tohsoft/app_event/OpenAppFromIntent.kt),
-  [`OpenAppSource`](../src/main/java/com/tohsoft/app_event/OpenAppSource.kt).
+  [`OpenAppSource`](../src/main/java/com/tohsoft/app_event/OpenAppSource.kt),
+  [`RateDialogEventTracker`](../src/main/java/com/tohsoft/app_event/RateDialogEventTracker.kt).
 - Per-event guides: [`OPEN_APP_FROM_GUIDE.md`](OPEN_APP_FROM_GUIDE.md),
   [`TIME_OPEN_APP_GUIDE.md`](TIME_OPEN_APP_GUIDE.md),
-  [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md).
+  [`APP_EXIT_GUIDE.md`](APP_EXIT_GUIDE.md),
+  [`RATE_DIALOG_GUIDE.md`](RATE_DIALOG_GUIDE.md).
 - Screen tracking playbook (lives in `:app`):
   [`SCREEN_VIEW_GUIDE.md`](SCREEN_VIEW_GUIDE.md).
 - Underlying log layer (`:firebase-events`):
   [`AnalyticsEvents`](../../firebase-events/src/main/java/com/tohsoft/firebase_events/AnalyticsEvents.kt),
   schema in [`EVENT_CATALOG.md`](../../firebase-events/docs/EVENT_CATALOG.md).
 - Remote-config toggles per event: `time_open_app_ev_enable`,
-  `app_exit_ev_enable`, `open_app_from_ev_enable` in
+  `app_exit_ev_enable`, `open_app_from_ev_enable`,
+  `show_rate_dialog_ev_enable` in
   [`CONFIGURATION.md`](../../firebase-events/docs/CONFIGURATION.md).

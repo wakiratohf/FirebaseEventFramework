@@ -2,6 +2,7 @@ package com.example.firebaseeventframework
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,8 +28,13 @@ import androidx.compose.ui.unit.dp
 import com.example.firebaseeventframework.event.AnalyticsEventsUtils
 import com.example.firebaseeventframework.event.AppOpenSource
 import com.example.firebaseeventframework.event.HomeBtnEv
+import com.example.firebaseeventframework.event.PopupName
+import com.example.firebaseeventframework.event.RateDialogBtnEv
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
+import com.example.firebaseeventframework.ui.dialogs.RateDialog
+import com.example.firebaseeventframework.ui.dialogs.RatePrefs
+import com.example.firebaseeventframework.ui.dialogs.openPlayStore
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.tohsoft.app_event.OpenAppFromIntent
 
@@ -39,6 +50,18 @@ class MainActivity : BaseTrackedActivity() {
         enableEdgeToEdge()
         setContent {
             FirebaseEventFrameworkTheme {
+                var showRateDialog by remember { mutableStateOf(false) }
+
+                // Back để thoát app: nếu đủ điều kiện thì hiện rate dialog thay vì
+                // thoát ngay (giống flow back-to-exit của app toh-weather).
+                BackHandler(enabled = !showRateDialog) {
+                    if (RatePrefs.shouldShowOnExit(this)) {
+                        showRateDialog = true
+                    } else {
+                        finish()
+                    }
+                }
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     HomeContent(
                         modifier = Modifier.padding(innerPadding),
@@ -53,6 +76,45 @@ class MainActivity : BaseTrackedActivity() {
                         onOpenStats = {
                             AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_STATS)
                             startActivity(Intent(this, StatsActivity::class.java))
+                        },
+                        onOpenSettings = {
+                            AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_SETTINGS)
+                            startActivity(Intent(this, SettingsActivity::class.java))
+                        }
+                    )
+                }
+
+                if (showRateDialog) {
+                    // Log screen_view của popup (start khi mở, stop kèm duration khi đóng).
+                    DisposableEffect(Unit) {
+                        val openedAt = System.currentTimeMillis()
+                        AnalyticsEventsUtils.logScreenStart(ScreenName.HOME, PopupName.RATE_DIALOG)
+                        onDispose {
+                            val durationSec = ((System.currentTimeMillis() - openedAt) / 1000).toInt()
+                            AnalyticsEventsUtils.logScreenStop(
+                                ScreenName.HOME, durationSec, PopupName.RATE_DIALOG
+                            )
+                        }
+                    }
+                    RateDialog(
+                        onRateNow = {
+                            AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_RATE_NOW)
+                            RatePrefs.setNeverShowAgain(this)
+                            openPlayStore(this)
+                            showRateDialog = false
+                            finish()
+                        },
+                        onRateLater = {
+                            AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_RATE_LATER)
+                            RatePrefs.resetCount(this)
+                            showRateDialog = false
+                            finish()
+                        },
+                        onDislike = {
+                            AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_DISLIKE)
+                            RatePrefs.setNeverShowAgain(this)
+                            showRateDialog = false
+                            finish()
                         }
                     )
                 }
@@ -75,7 +137,8 @@ fun HomeContent(
     modifier: Modifier = Modifier,
     onOpenTasks: () -> Unit = {},
     onOpenTimer: () -> Unit = {},
-    onOpenStats: () -> Unit = {}
+    onOpenStats: () -> Unit = {},
+    onOpenSettings: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -91,6 +154,7 @@ fun HomeContent(
         NavCard(title = "Tasks", subtitle = "Quản lý công việc", onClick = onOpenTasks)
         NavCard(title = "Timer", subtitle = "Pomodoro 25/5", onClick = onOpenTimer)
         NavCard(title = "Stats", subtitle = "Thống kê 7 ngày", onClick = onOpenStats)
+        NavCard(title = "Settings", subtitle = "Cài đặt & đánh giá", onClick = onOpenSettings)
     }
 }
 

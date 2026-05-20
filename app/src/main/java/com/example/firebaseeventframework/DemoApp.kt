@@ -70,6 +70,7 @@ class DemoApp : Application() {
                 is TaskListActivity -> ScreenName.TASKS
                 is TimerActivity -> ScreenName.TIMER
                 is StatsActivity -> ScreenName.STATS
+                is SettingsActivity -> ScreenName.SETTINGS
                 else -> activity.javaClass.simpleName
             }
         }

@@ -9,4 +9,5 @@ enum class HomeBtnEv(
     OPEN_TASKS(ScreenName.HOME, "openTasks", PopupName.NONE),
     OPEN_TIMER(ScreenName.HOME, "openTimer", PopupName.NONE),
     OPEN_STATS(ScreenName.HOME, "openStats", PopupName.NONE),
+    OPEN_SETTINGS(ScreenName.HOME, "openSettings", PopupName.NONE),
 }
