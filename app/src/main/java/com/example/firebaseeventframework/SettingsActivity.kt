@@ -29,8 +29,13 @@ import com.example.firebaseeventframework.event.RateDialogBtnEv
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.event.SettingsBtnEv
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_DISLIKE
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_LATER
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_RATE_US
 import com.example.firebaseeventframework.ui.dialogs.RateDialog
 import com.example.firebaseeventframework.ui.dialogs.RatePrefs
+import com.example.firebaseeventframework.ui.dialogs.WHERE_SETTINGS
+import com.example.firebaseeventframework.ui.dialogs.logRateDialogButtonEv
 import com.example.firebaseeventframework.ui.dialogs.openPlayStore
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 
@@ -81,8 +86,9 @@ private fun SettingsScreen() {
     }
 
     if (showRateDialog) {
-        // Log screen_view của popup (start khi mở, stop kèm duration khi đóng).
+        // Khi dialog hiện: tăng show count + log screen_view của popup.
         DisposableEffect(Unit) {
+            RatePrefs.increaseShowCount(context)
             val openedAt = System.currentTimeMillis()
             AnalyticsEventsUtils.logScreenStart(ScreenName.SETTINGS, PopupName.RATE_DIALOG)
             onDispose {
@@ -95,6 +101,7 @@ private fun SettingsScreen() {
         RateDialog(
             onRateNow = {
                 AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.SETTINGS_RATE_NOW)
+                logRateDialogButtonEv(context, WHERE_SETTINGS, RATE_BTN_RATE_US, rateStars = 5)
                 // Đã rate → tắt luôn dialog back-to-exit ở Home.
                 RatePrefs.setNeverShowAgain(context)
                 openPlayStore(context)
@@ -102,10 +109,12 @@ private fun SettingsScreen() {
             },
             onRateLater = {
                 AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.SETTINGS_RATE_LATER)
+                logRateDialogButtonEv(context, WHERE_SETTINGS, RATE_BTN_LATER)
                 showRateDialog = false
             },
             onDislike = {
                 AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.SETTINGS_DISLIKE)
+                logRateDialogButtonEv(context, WHERE_SETTINGS, RATE_BTN_DISLIKE)
                 RatePrefs.setNeverShowAgain(context)
                 showRateDialog = false
             }

@@ -4,6 +4,8 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.example.firebaseeventframework.event.AppOpenCounter
+import com.tohsoft.app_event.RateDialogEventTracker
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -107,6 +109,47 @@ fun RateDialog(
             }
         }
     }
+}
+
+/**
+ * Định danh nơi rate dialog hiện lên — đi vào param `where` của
+ * `show_rate_dialog_ev`. [whereHomeBack] dựng động từ ngưỡng hiện hành
+ * ([RatePrefs.showOnBackPressOrdinal]) → `home_back_3rd` với cấu hình mặc định,
+ * tự đổi theo nếu chỉnh ngưỡng, giữ format giống bản gốc toh-weather.
+ */
+fun whereHomeBack(): String = "home_back_${RatePrefs.showOnBackPressOrdinal}rd"
+
+const val WHERE_SETTINGS = "settings"
+
+/**
+ * Tên nút gửi vào param `button_click` (theo danh mục cố định trong
+ * `RATE_DIALOG_GUIDE.md` / bản gốc): `RateUs`, `NoT`, `Later`.
+ */
+const val RATE_BTN_RATE_US = "RateUs"
+const val RATE_BTN_DISLIKE = "NoT"
+const val RATE_BTN_LATER = "Later"
+
+/**
+ * Glue mỏng của `:app`: resolve counters từ store của host rồi forward vào
+ * [RateDialogEventTracker] (module không tự đọc prefs). Tương đương
+ * `AppUtil.logShowRateDialogEv(activity, buttonName)` bản gốc.
+ *
+ * Dialog không có thanh chọn sao; truyền [rateStars] = 5 cho nút "Đánh giá 5 sao"
+ * (ý định 5 sao rõ ràng), mặc định 0 cho các nút còn lại.
+ */
+fun logRateDialogButtonEv(
+    context: Context,
+    where: String,
+    buttonNameClicked: String,
+    rateStars: Int = 0,
+) {
+    RateDialogEventTracker.logShowRateDialog(
+        where = where,
+        showCount = RatePrefs.getShowCount(context),
+        appOpenedCount = AppOpenCounter.get(context),
+        buttonNameClicked = buttonNameClicked,
+        rateStars = rateStars,
+    )
 }
 
 /**

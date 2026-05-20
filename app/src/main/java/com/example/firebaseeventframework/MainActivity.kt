@@ -32,9 +32,14 @@ import com.example.firebaseeventframework.event.PopupName
 import com.example.firebaseeventframework.event.RateDialogBtnEv
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_DISLIKE
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_LATER
+import com.example.firebaseeventframework.ui.dialogs.RATE_BTN_RATE_US
 import com.example.firebaseeventframework.ui.dialogs.RateDialog
 import com.example.firebaseeventframework.ui.dialogs.RatePrefs
+import com.example.firebaseeventframework.ui.dialogs.logRateDialogButtonEv
 import com.example.firebaseeventframework.ui.dialogs.openPlayStore
+import com.example.firebaseeventframework.ui.dialogs.whereHomeBack
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.tohsoft.app_event.OpenAppFromIntent
 
@@ -85,8 +90,10 @@ class MainActivity : BaseTrackedActivity() {
                 }
 
                 if (showRateDialog) {
-                    // Log screen_view của popup (start khi mở, stop kèm duration khi đóng).
+                    // Khi dialog hiện: tăng show count + log screen_view của popup
+                    // (start khi mở, stop kèm duration khi đóng).
                     DisposableEffect(Unit) {
+                        RatePrefs.increaseShowCount(this@MainActivity)
                         val openedAt = System.currentTimeMillis()
                         AnalyticsEventsUtils.logScreenStart(ScreenName.HOME, PopupName.RATE_DIALOG)
                         onDispose {
@@ -99,6 +106,7 @@ class MainActivity : BaseTrackedActivity() {
                     RateDialog(
                         onRateNow = {
                             AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_RATE_NOW)
+                            logRateDialogButtonEv(this, whereHomeBack(), RATE_BTN_RATE_US, rateStars = 5)
                             RatePrefs.setNeverShowAgain(this)
                             openPlayStore(this)
                             showRateDialog = false
@@ -106,12 +114,14 @@ class MainActivity : BaseTrackedActivity() {
                         },
                         onRateLater = {
                             AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_RATE_LATER)
+                            logRateDialogButtonEv(this, whereHomeBack(), RATE_BTN_LATER)
                             RatePrefs.resetCount(this)
                             showRateDialog = false
                             finish()
                         },
                         onDislike = {
                             AnalyticsEventsUtils.logClickBtn(RateDialogBtnEv.HOME_DISLIKE)
+                            logRateDialogButtonEv(this, whereHomeBack(), RATE_BTN_DISLIKE)
                             RatePrefs.setNeverShowAgain(this)
                             showRateDialog = false
                             finish()

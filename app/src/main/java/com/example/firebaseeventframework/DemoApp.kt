@@ -7,6 +7,7 @@ import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import androidx.core.os.ConfigurationCompat
 import com.example.firebaseeventframework.data.DatabaseProvider
+import com.example.firebaseeventframework.event.AppOpenCounter
 import com.example.firebaseeventframework.event.ConsentManager
 import com.example.firebaseeventframework.event.ScreenName
 import com.tohsoft.app_event.AppEventsInstaller
@@ -42,6 +43,8 @@ class DemoApp : Application() {
                 if (startedActivities == 0) {
                     foregroundedAt = System.currentTimeMillis()
                     FirebasePrefs.saveAppOpenedTimestamp(this@DemoApp, foregroundedAt)
+                    // Mở app từ nền → tăng đếm phục vụ show_rate_dialog_ev.
+                    AppOpenCounter.increase(this@DemoApp)
                 }
                 startedActivities++
             }
