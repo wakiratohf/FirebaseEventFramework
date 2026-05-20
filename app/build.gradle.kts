@@ -49,6 +49,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(project(":firebase-events"))
     implementation(project(":app-event"))
+    implementation(project(":ads"))
 
     // Custom Lint rules enforce convention ClickBtnEv tại compile-time.
     lintChecks(project(":firebase-events-lint"))

@@ -41,6 +41,7 @@ import com.example.firebaseeventframework.ui.dialogs.logRateDialogButtonEv
 import com.example.firebaseeventframework.ui.dialogs.openPlayStore
 import com.example.firebaseeventframework.ui.dialogs.whereHomeBack
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
+import com.tohsoft.ads.BannerAd
 import com.tohsoft.app_event.OpenAppFromIntent
 
 class MainActivity : BaseTrackedActivity() {
@@ -67,7 +68,16 @@ class MainActivity : BaseTrackedActivity() {
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    // Banner adaptive neo đáy màn Home (dùng test ad unit id).
+                    bottomBar = {
+                        BannerAd(
+                            modifier = Modifier.fillMaxWidth(),
+                            screenName = ScreenName.HOME,
+                        )
+                    }
+                ) { innerPadding ->
                     HomeContent(
                         modifier = Modifier.padding(innerPadding),
                         onOpenTasks = {

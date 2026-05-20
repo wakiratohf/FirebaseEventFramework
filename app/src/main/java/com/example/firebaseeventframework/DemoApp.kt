@@ -10,6 +10,7 @@ import com.example.firebaseeventframework.data.DatabaseProvider
 import com.example.firebaseeventframework.event.AppOpenCounter
 import com.example.firebaseeventframework.event.ConsentManager
 import com.example.firebaseeventframework.event.ScreenName
+import com.tohsoft.ads.AdsManager
 import com.tohsoft.app_event.AppEventsInstaller
 import com.tohsoft.firebase_events.AnalyticsModule
 import com.tohsoft.firebase_events.AnalyticsUserProperties
@@ -36,6 +37,11 @@ class DemoApp : Application() {
             },
             isTestMode = isDebug
         )
+
+        // Khởi tạo Google Mobile Ads SDK (banner ở MainActivity) + AdsEventTracker.
+        // Gọi sau AnalyticsModule.init vì lần đầu tracker log ad_engagement_level=0.
+        // Phần nặng của MobileAds tự chạy off-main-thread nên an toàn trong onCreate.
+        AdsManager.initialize(this, isTestMode = isDebug)
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
