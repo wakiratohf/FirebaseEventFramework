@@ -12,6 +12,7 @@ object FirebasePrefs {
     private const val PREF_NAME = "firebase_prefs"
     private const val KEY_APP_OPENED_TIMESTAMP = "app_opened_timestamp"
     private const val KEY_LAST_TIME_OPEN_APP = "last_time_open_app"
+    private const val KEY_AD_SHOWED_COUNT = "ad_showed_count"
     private const val KEY_USER_TIER = "user_tier"
     private const val KEY_SUBSCRIPTION_STATUS = "subscription_status"
     private const val KEY_COUNTRY = "country"
@@ -136,6 +137,18 @@ object FirebasePrefs {
 
     fun getLastTimeOpenApp(context: Context): Long {
         return getPrefs(context).getLong(KEY_LAST_TIME_OPEN_APP, 0L)
+    }
+
+    /**
+     * Monotonic count of ads shown — backs the `ad_engagement_level` user
+     * property. Returns -1 when never set (caller seeds it on first run).
+     */
+    fun getAdShowedCount(context: Context): Int {
+        return getPrefs(context).getInt(KEY_AD_SHOWED_COUNT, -1)
+    }
+
+    fun setAdShowedCount(context: Context, count: Int) {
+        getPrefs(context).edit { putInt(KEY_AD_SHOWED_COUNT, count) }
     }
 
     fun getAllowPermission(context: Context): String {
