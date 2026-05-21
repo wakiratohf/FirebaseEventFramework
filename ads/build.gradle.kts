@@ -34,11 +34,11 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(project(":app-events"))
 
     // Bridge AdMob callbacks → analytics. :ads là module duy nhất biết SDK ads
     // cụ thể (AdMob), nên giữ glue ở đây thay vì :app (xem app-event/docs/ADS_EVENT_GUIDE.md).
     // AdsEventTracker (SDK-agnostic) sống ở :app-event; AdRevenueLike ở :firebase-events.
-    implementation(project(":app-event"))
     implementation(project(":firebase-events"))
 
     // Google Mobile Ads (AdMob). `api` để host app dùng trực tiếp AdRequest/MobileAds nếu cần.

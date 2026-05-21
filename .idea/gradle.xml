@@ -11,7 +11,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/ads" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/app-event" />
+            <option value="$PROJECT_DIR$/app-events" />
             <option value="$PROJECT_DIR$/firebase-events" />
             <option value="$PROJECT_DIR$/firebase-events-lint" />
           </set>
