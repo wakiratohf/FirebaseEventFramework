@@ -1,0 +1,145 @@
+# =============================================================================
+# event-spec.yaml — Đặc tả analytics events cho dự án Android
+# =============================================================================
+# File này là single source of truth cho mọi tracking trong app.
+# - PM / Leader maintain (KHÔNG phải dev viết tay)
+# - Versioned trong git (mỗi PR thay đổi spec → review như code)
+# - Skill `firebase-events-impl` đọc file này, sinh code Kotlin
+#
+# Validate: python .claude/skills/firebase-events-impl/scripts/validate_spec.py docs/analytics/event-spec.yaml
+# Generate: /analytics-generate
+# Audit:    /analytics-audit
+# Verify:   /analytics-verify
+# =============================================================================
+
+project:
+  name: "TODO_PROJECT_NAME"                          # vd: "VPN Lite"
+  package: "com.example.todo"                        # Java package gốc
+  application_class: "com.example.todo.App"          # Application class fully-qualified
+  version: "1.0.0"                                   # bump khi spec đổi major
+  mode: "view_binding"                               # compose | hybrid | view_binding
+                                                     # - compose: Jetpack Compose 100% (audit P12/P13)
+                                                     # - hybrid: mix Compose + View Binding (audit cả 2 layer)
+                                                     # - view_binding: chỉ XML layouts (audit P3/P4)
+                                                     # Mặc định auto-detect bởi /analytics-scaffold theo
+                                                     # tỷ lệ file có `@Composable` annotation.
+
+  # ignore_screens: [test_config, vpn_log_list]      # màn KHÔNG track — chỉ hiện ở test/debug mode
+                                                     # (gate `if (isTestMode)` / `if (BuildConfig.DEBUG)`).
+                                                     # Audit bỏ qua P11/P12/P13/P14 cho file thuộc các màn này.
+                                                     # /analytics-scaffold auto-suggest nếu phát hiện.
+
+  # Bật/tắt nhóm helper trong AnalyticsEventsUtils.kt sẽ sinh ra
+  features:
+    iap: false                                       # → logIapAttempt()
+    ads: false                                       # → logAdLoad / Show / Click()
+    rate_dialog: false                               # → logRateDialog()
+    onboarding: false                                # → logOnboardingStep()
+    appsflyer: false                                 # → AppsFlyer adapter (chưa có v1)
+    permissions: []                                  # mảng AllowPermission: NOTIFICATION/LOCATION/...
+
+# =============================================================================
+# SCREENS — mỗi Activity / mỗi Fragment 1 entry
+# =============================================================================
+# `id` = snake_case, ≤40 char, lowercase
+# `class` = Kotlin class name (không cần fully-qualified, audit sẽ tự tìm)
+# `parent` (optional) = id của screen cha, cho hierarchical tracking
+# Module sẽ CamelCase khi log: home → "Home", home_settings → "HomeSettings"
+screens:
+  - id: home
+    class: HomeActivity
+  # - id: settings
+  #   class: SettingsActivity
+  # - id: server_list
+  #   class: ServerListFragment
+  #   parent: home
+
+# =============================================================================
+# POPUPS — Dialog / BottomSheet / overlay
+# =============================================================================
+# `id` = snake_case, KHÔNG dùng từ "popup" trong id (module strip mất ý nghĩa)
+# Khi click button trong popup, button đó phải khai báo `popup: <id>` ở dưới
+popups: []
+  # - id: rate_dialog
+  #   class: RateUsDialog
+  # - id: permission_request
+
+# =============================================================================
+# BUTTONS — mỗi nút trackable 1 entry
+# =============================================================================
+# Mỗi entry:
+#   screen:  bắt buộc — FK đến screens[].id
+#   id:      snake_case, prefix "btn_" (hoặc "radio_" cho radio group)
+#   name:    human-readable (CamelCase, dùng cho report)
+#   popup:   optional — FK đến popups[].id nếu nút thuộc popup
+#   triggers: optional — side-effect cần log khi click (ví dụ iap_ev)
+#   type:    optional — stateful button (sinh nhiều enum const từ 1 spec entry):
+#     'toggle'   → 2 const _ON / _OFF (Switch). Call site: logClickBtn(if(new) X_ON else X_OFF)
+#     'checkbox' → 2 const _CHECKED / _UNCHECKED (Checkbox/TriStateCheckbox)
+#     'accordion'→ 2 const _EXPANDED / _COLLAPSED (FAQ items, expandable rows)
+#     'radio'    → N const RADIO_{LABEL} từ options[]. CẦN `options: [{value, label}, ...]`
+buttons: []
+  # - screen: home
+  #   id: btn_premium
+  #   name: PremiumButton
+  #   triggers:
+  #     - event: iap_ev
+  #       params:
+  #         where: home_pro_icon
+  #
+  # Stateful examples:
+  # - screen: split_tunneling
+  #   id: btn_toggle_all
+  #   type: toggle                                    # → _ON / _OFF
+  # - screen: connection_center
+  #   id: radio_timeout
+  #   popup: screen_off_timeout_dialog
+  #   type: radio
+  #   options:
+  #     - value: Sec10
+  #       label: 10Seconds                            # → RADIO_10_SECONDS / radio10Seconds
+  #     - value: Sec30
+  #       label: 30Seconds
+  #     - value: Disable
+  #       label: Disable
+
+# =============================================================================
+# CUSTOM EVENTS — event đặc thù dự án (không có sẵn trong module)
+# =============================================================================
+# Module có sẵn 13 event built-in (screen_view_ev, click_btn_ev, iap_ev, ...) —
+# KHÔNG khai báo lại.
+#
+# Mỗi custom event:
+#   name:         snake_case, ≤40 char, ko prefix `firebase_`/`google_`/`ga_`
+#   description:  giải thích cho QA + audit hint
+#   params:       danh sách, mỗi param có name/type/[enum]/[meaning]
+#                 type: string | int | long | double | bool (param max 25)
+#   trigger_hint: gợi ý chỗ phải log (file + method) — audit dùng để TODO
+custom_events: []
+  # - name: vpn_connect_ev
+  #   description: "User bấm Connect và nhận kết quả"
+  #   params:
+  #     - name: server_country
+  #       type: string
+  #       sample: "VN, US, JP"
+  #     - name: protocol
+  #       type: string
+  #       enum: [openvpn, wireguard, ikev2]
+  #     - name: connect_result
+  #       type: int
+  #       enum: [0, 1]
+  #       meaning: "0=fail, 1=success"
+  #   trigger_hint:
+  #     file: VpnConnectionManager.kt
+  #     method: onConnectionResult
+
+# =============================================================================
+# USER PROPERTIES — properties đặc thù dự án
+# =============================================================================
+# Module có sẵn 9 built-in (language, app_version, country, user_tier, ...) —
+# KHÔNG khai báo lại; nếu khai sẽ bị warn.
+user_properties: []
+  # - name: preferred_protocol
+  #   type: string
+  #   enum: [openvpn, wireguard, ikev2]
+  #   trigger: "Khi user chọn protocol mặc định trong Settings"
