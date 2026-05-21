@@ -1,0 +1,198 @@
+# =============================================================================
+# event-spec.yaml — Đặc tả analytics events cho dự án Android
+# =============================================================================
+# Đây là single source of truth cho mọi tracking trong app.
+#  - PM / Leader maintain (KHÔNG để dev sửa lung tung)
+#  - Versioned trong git, mỗi PR thay đổi spec → review như review code
+#  - Skill `firebase-events-impl` đọc file này, sinh code Kotlin
+#
+# Workflow:
+#   1. Validate:  python .claude/skills/firebase-events-impl/scripts/validate_spec.py docs/analytics/event-spec.yaml
+#   2. Generate:  /analytics-generate
+#   3. Audit:     /analytics-audit
+#   4. Verify:    /analytics-verify
+# =============================================================================
+
+project:
+  name: "TODO_PROJECT_NAME"                          # vd: "VPN Lite"
+  package: "com.example.todo"                        # Java package gốc của app
+  application_class: "com.example.todo.App"          # Application class fully-qualified
+  version: "1.0.0"                                   # Bump khi spec đổi (semver tuỳ chọn)
+
+  # =========================================================================
+  # mode — Quyết định loại Kotlin code sẽ được sinh
+  # =========================================================================
+  #   view_binding : Project dùng XML layouts + ViewBinding hoặc findViewById
+  #                  → Sinh BaseTrackedActivity.kt + BaseTrackedFragment.kt
+  #                  → Audit patterns: P1-P7
+  #   compose      : Project dùng Jetpack Compose 100%
+  #                  → Sinh TrackedComposables.kt (TrackedScreen/TrackedButton/...)
+  #                  → Audit patterns: P11-P14 (+ P1 cho Activity hosting)
+  #   hybrid       : Project mix Compose + ViewBinding
+  #                  → Sinh CẢ HAI
+  #                  → Audit patterns: TẤT CẢ
+  #
+  # Auto-detect nếu chạy /analytics-scaffold; mặc định `view_binding`.
+  mode: "view_binding"
+
+  # event_name_style — định dạng tên event Firebase được log:
+  #   "pascal_case" (default) — output qua module's convertSnakeCaseToCamelCase,
+  #     vd: screenName="settings" + buttonName="back" → "Settings_Back"
+  #     (chuẩn của Tohsoft framework, 200+ entries existing)
+  #   "camel_case" — bypass module's transform, output giữ first letter lowercase,
+  #     vd: screenName="settings" + buttonName="back" → "settings_back"
+  #     (project-specific override; wrapper gọi AnalyticsEvents.logEvent generic)
+  event_name_style: "pascal_case"
+
+  # ignore_screens : Các màn hình KHÔNG track (vd test/debug, chỉ hiện khi
+  #                  BuildConfig.DEBUG). Audit bỏ qua P11/P12/P13/P14 cho file
+  #                  của các màn này.
+  # ignore_screens: [test_config, vpn_log_list]
+
+  # =========================================================================
+  # features — Bật/tắt nhóm helper trong AnalyticsEventsUtils.kt + AnalyticsBootstrap.kt
+  # 
+  # Theo NGUYÊN TẮC: helpers forward sang :app-events trackers khi có sẵn (ads,
+  # rate_dialog, open_app_from). Chỉ rơi xuống :firebase-events core khi
+  # :app-events không có tracker tương ứng (iap, onboarding).
+  # =========================================================================
+  features:
+    iap: false                                       # → logIap()
+                                                     # (qua firebase-events core, no tracker)
+    ads: false                                       # → logAdLoad/Show/Click/PaidAd helpers
+                                                     # forward sang AdsEventTracker (:app-events)
+                                                     # + AnalyticsBootstrap auto-init AdsEventTracker
+                                                     # + nếu true VÀ project import :ads module
+                                                     #   → auto gọi AdsManager.initialize()
+                                                     # (project AdMob: chạy `--modules ads` ở import)
+    rate_dialog: false                               # → logRateDialog() forward sang
+                                                     # RateDialogEventTracker (:app-events)
+                                                     # signature richer: where/showCount/
+                                                     #   appOpenedCount/buttonClicked/stars
+    open_app_from: false                             # → logOpenAppFrom() forward sang
+                                                     # OpenAppFromIntent.logFromIntent (:app-events)
+                                                     # User wires MainActivity.onCreate + onNewIntent
+                                                     # (xem app-events/docs/OPEN_APP_FROM_GUIDE.md)
+    onboarding: false                                # → logOnboardingStep()
+                                                     # (qua firebase-events core)
+    appsflyer: false                                 # → AppsFlyer adapter (chưa có ở v1)
+    permissions: []                                  # vd: [NOTIFICATION, LOCATION, CAMERA]
+                                                     # → logAllow<Permission>(granted: Boolean)
+
+# =============================================================================
+# SCREENS — mỗi Activity / Fragment có screen riêng = 1 entry
+# =============================================================================
+#   id     : bắt buộc, snake_case, ≤40 char, lowercase
+#            (module sẽ tự CamelCase khi log: home → "Home", server_list → "ServerList")
+#   class  : bắt buộc, Kotlin class name (không cần fully-qualified)
+#   kind   : optional — 'activity' | 'fragment' | 'composable'
+#            Auto-detect từ class suffix nếu không khai báo
+#   parent : optional — id của screen cha (hierarchical tracking)
+# =============================================================================
+screens:
+  - id: home
+    class: HomeActivity
+  # - id: settings
+  #   class: SettingsActivity
+  # - id: server_list
+  #   class: ServerListFragment
+  #   parent: home
+  # - id: profile
+  #   class: ProfileScreen
+  #   kind: composable
+
+# =============================================================================
+# POPUPS — Dialog, BottomSheet, AlertDialog, ModalBottomSheet, etc.
+# =============================================================================
+#   id    : snake_case, KHÔNG dùng từ "popup" trong id (module strip mất nghĩa)
+#   class : optional — class/composable name của popup
+# Mỗi button NẰM TRONG popup phải khai báo `popup: <id>` trong section buttons
+# =============================================================================
+popups: []
+  # - id: rate_dialog
+  #   class: RateUsDialog
+  # - id: permission_request
+  #   class: PermissionRequestDialog
+
+# =============================================================================
+# BUTTONS — mỗi nút trackable = 1 entry
+# =============================================================================
+#   screen   : bắt buộc — FK đến screens[].id
+#   id       : bắt buộc, snake_case, prefix `btn_` (hoặc `radio_` cho radio group)
+#   name     : bắt buộc, human-readable (CamelCase), dùng cho report QC
+#   popup    : optional — FK đến popups[].id nếu nút nằm trong popup
+#   triggers : optional — side-effect cần log khi click (vd `iap_ev`)
+#   type     : optional — stateful button, sinh nhiều const từ 1 entry:
+#       'toggle'    → 2 const _ON / _OFF (Switch)
+#       'checkbox'  → 2 const _CHECKED / _UNCHECKED (Checkbox)
+#       'accordion' → 2 const _EXPANDED / _COLLAPSED (expandable card / FAQ)
+#       'radio'     → N const RADIO_{LABEL} (cần options[])
+#   options  : chỉ dùng với type=radio. vd:
+#       options:
+#         - { value: "5min",  label: "5Min" }
+#         - { value: "15min", label: "15Min" }
+# =============================================================================
+buttons: []
+  # - screen: home
+  #   id: btn_connect
+  #   name: ConnectButton
+  #
+  # - screen: home
+  #   id: btn_premium
+  #   name: PremiumButton
+  #   triggers:
+  #     - event: iap_ev
+  #       params:
+  #         where: home_pro_icon
+  #
+  # - screen: settings
+  #   id: btn_dark_mode
+  #   name: DarkModeToggle
+  #   type: toggle
+  #
+  # - screen: settings
+  #   id: radio_timeout
+  #   name: TimeoutSelector
+  #   type: radio
+  #   options:
+  #     - { value: "5min",  label: "5Min" }
+  #     - { value: "15min", label: "15Min" }
+  #     - { value: "30min", label: "30Min" }
+
+# =============================================================================
+# CUSTOM_EVENTS — event đặc thù dự án (ngoài 13 event chuẩn của module)
+# =============================================================================
+#   name        : bắt buộc, snake_case, ≤40 char, kết thúc `_ev` (convention)
+#   description : optional, mô tả ngắn (đưa vào KDoc của class generated)
+#   params      : list of param
+#       - name : snake_case, ≤40 char
+#         type : string | int | long | double | boolean
+#         enum : optional, list các giá trị hợp lệ (sinh companion const)
+#   trigger_hint: optional, gợi ý chỗ gọi (audit dùng để check):
+#       file   : tên file Kotlin
+#       method : tên method
+# =============================================================================
+custom_events: []
+  # - name: vpn_connect_ev
+  #   description: "User kết nối VPN"
+  #   params:
+  #     - { name: server_country, type: string }
+  #     - { name: protocol,       type: string, enum: [openvpn, wireguard, ikev2] }
+  #     - { name: connect_result, type: int,    enum: [0, 1] }
+  #   trigger_hint:
+  #     file: VpnConnectionManager.kt
+  #     method: onConnectionResult
+
+# =============================================================================
+# USER_PROPERTIES — thuộc tính lâu dài của user (ngoài 9 property chuẩn module)
+# =============================================================================
+#   name        : bắt buộc, snake_case, ≤24 char (Firebase limit)
+#   type        : string | int | boolean
+#   enum        : optional
+#   description : optional
+# =============================================================================
+user_properties: []
+  # - name: preferred_protocol
+  #   type: string
+  #   enum: [openvpn, wireguard, ikev2]
+  #   description: "Protocol mặc định user chọn trong Settings"

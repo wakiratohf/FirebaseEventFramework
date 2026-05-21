@@ -1,0 +1,350 @@
+package {{ package }}.event
+
+{% if features.ads or features.open_app_from %}import android.content.Context
+{% endif %}import android.os.Bundle
+import com.tohsoft.firebase_events.AnalyticsEvents
+import com.tohsoft.firebase_events.AnalyticsModule
+import com.tohsoft.firebase_events.AnalyticsUserProperties
+import com.tohsoft.firebase_events.models.AnalyticsEvent
+{% if features.iap %}import com.tohsoft.firebase_events.models.IAPEv
+{% endif %}{% if features.onboarding %}import com.tohsoft.firebase_events.models.OnboardingStepEv
+{% endif %}{% if features.ads %}import com.tohsoft.firebase_events.models.AdRevenueLike
+import com.tohsoft.app_event.AdsEventTracker
+{% endif %}{% if features.rate_dialog %}import com.tohsoft.app_event.RateDialogEventTracker
+{% endif %}{% if features.open_app_from %}import com.tohsoft.app_event.OpenAppFromIntent
+import com.tohsoft.app_event.OpenAppSource
+{% endif %}{% if event_name_style == 'pascal_case' %}import com.tohsoft.firebase_events.models._ClickBtnEv
+import com.tohsoft.firebase_events.models._ScreenViewEv
+import com.tohsoft.firebase_events.models._ScreenViewEv.State
+{% endif %}
+
+/**
+ * Single funnel for every analytics call in {{ project_name }}.
+ *
+ * Event name style: **{{ event_name_style }}**
+{% if event_name_style == 'camel_case' %}
+ *   Output format: `screenName_buttonName` (vd `settings_settingsItem`).
+ *   Bypass module's `convertSnakeCaseToCamelCase` (vốn force PascalCase) — log
+ *   trực tiếp qua `AnalyticsEvents.logEvent(name, bundle)` generic API.
+{% else %}
+ *   Output format: `ScreenName_ButtonName` (vd `Settings_SettingsItem`).
+ *   Theo convention chuẩn của module — qua `_ClickBtnEv` / `_ScreenViewEv` models.
+{% endif %}
+ *
+ * Why a wrapper instead of calling `AnalyticsEvents.logXxx` directly:
+ *
+ *  1. **Centralised guard rails** — every call goes through the same code,
+ *     so adding a throttle/dedupe/test-mode-hook later only touches one file.
+ *  2. **Project-local conventions** — `time` for click events is computed
+ *     here from `AnalyticsModule.getAppOpenedTimestamp()`; the runtime module
+ *     doesn't know about the project's session model.
+ *  3. **Compiled call site** — passing `ClickBtnEvCatalog.X` instead of 3
+ *     loose strings lets Android Lint catch convention drift at the enum
+ *     declaration rather than at every screen.
+ *
+ * DO NOT add helpers by hand. Use this file only as a generated facade;
+ * if you need custom logic, create `AnalyticsEventsUtilsExt.kt` (no
+ * `AUTO-GENERATED` header) next to this file and add extension functions.
+ */
+object AnalyticsEventsUtils {
+
+    // -----------------------------------------------------------------------
+    // Screen tracking
+    // -----------------------------------------------------------------------
+
+    /** Call from `onResume` (or `LaunchedEffect` in Compose). */
+    @JvmStatic
+    fun logScreenStart(screenName: String, popupName: String = PopupName.NONE) {
+        AnalyticsUserProperties.logEventScreenOpen(screenName, popupName)
+    }
+
+    /** Call from `onPause` / `onStop` (or `DisposableEffect.onDispose`). */
+    @JvmStatic
+    fun logScreenStop(
+        screenName: String,
+        durationSec: Int,
+        popupName: String = PopupName.NONE,
+{% if event_name_style == 'pascal_case' %}
+        state: State = State.STOP,
+    ) {
+        AnalyticsEvents.logScreenViewEv(
+            _ScreenViewEv(
+                screenName = screenName,
+                screenState = state,
+                popupName = popupName,
+                duration = durationSec,
+            )
+        )
+    }
+{% else %}
+        state: String = "stop",
+    ) {
+        // camel_case style: build event name local (giữ first letter lowercase)
+        val nameValue = buildEventName(screenName, popupName, button = "")
+        val bundle = Bundle().apply {
+            putString("screen_name", nameValue)
+            putString("screen_state", state)
+            putInt("duration", durationSec)
+        }
+        AnalyticsEvents.logEvent("screen_view_ev", bundle)
+    }
+{% endif %}
+
+    // -----------------------------------------------------------------------
+    // Click tracking
+    // -----------------------------------------------------------------------
+
+    /** Preferred call site — pass a [ClickBtnEv] enum so Lint can audit. */
+    @JvmStatic
+    fun logClickBtn(event: ClickBtnEv) {
+        logClickBtn(event.screenName, event.buttonName, event.popupName)
+    }
+
+{% if event_name_style == 'pascal_case' %}
+    /**
+     * Preferred for stateful buttons where you need to attach an identifying
+     * value (e.g. FAQ item id, package name). Value goes into
+     * `click_btn_ev_value`, NOT the event name.
+     */
+    @JvmStatic
+    fun logClickBtn(event: ClickBtnEv, value: String) {
+        AnalyticsEvents.logClickBtnEv(
+            _ClickBtnEv(
+                screenName = event.screenName,
+                buttonName = event.buttonName,
+                popupName = event.popupName,
+                time = secondsSinceAppOpen(),
+            ).apply { /* value field set if module supports it */ }
+        )
+    }
+
+    /** Loose-arg overload. Prefer the enum overloads above when possible. */
+    @JvmStatic
+    fun logClickBtn(
+        screenName: String,
+        buttonName: String,
+        popupName: String = PopupName.NONE,
+    ) {
+        AnalyticsEvents.logClickBtnEv(
+            _ClickBtnEv(
+                screenName = screenName,
+                buttonName = buttonName,
+                popupName = popupName,
+                time = secondsSinceAppOpen(),
+            )
+        )
+    }
+{% else %}
+    /**
+     * Preferred for stateful buttons where you need to attach an identifying
+     * value (e.g. FAQ item id, package name). Value goes into
+     * `click_btn_ev_value`, NOT the event name.
+     */
+    @JvmStatic
+    fun logClickBtn(event: ClickBtnEv, value: String) {
+        val nameValue = buildEventName(event.screenName, event.popupName, event.buttonName)
+        val bundle = Bundle().apply {
+            putString("click_btn_ev_name", nameValue)
+            putInt("click_btn_ev_time", secondsSinceAppOpen())
+            putString("click_btn_ev_value", value)
+        }
+        AnalyticsEvents.logEvent("click_btn_ev", bundle)
+    }
+
+    /** Loose-arg overload. Prefer the enum overloads above when possible. */
+    @JvmStatic
+    fun logClickBtn(
+        screenName: String,
+        buttonName: String,
+        popupName: String = PopupName.NONE,
+    ) {
+        val nameValue = buildEventName(screenName, popupName, buttonName)
+        val bundle = Bundle().apply {
+            putString("click_btn_ev_name", nameValue)
+            putInt("click_btn_ev_time", secondsSinceAppOpen())
+        }
+        AnalyticsEvents.logEvent("click_btn_ev", bundle)
+    }
+
+    /**
+     * Build event name camelCase (first letter lowercase). Skip popup if empty.
+     * Vd: ("settings", "", "settingsItem") → "settings_settingsItem"
+     *     ("home", "rateDialog", "ok")     → "home_rateDialog_ok"
+     */
+    @JvmStatic
+    private fun buildEventName(screen: String, popup: String, button: String): String {
+        val parts = mutableListOf(screen)
+        if (popup.isNotEmpty()) parts.add(popup)
+        if (button.isNotEmpty()) parts.add(button)
+        return parts.joinToString("_")
+    }
+{% endif %}
+
+    // -----------------------------------------------------------------------
+    // Project-defined custom events
+    // -----------------------------------------------------------------------
+
+    /** Fire a custom event implementing [AnalyticsEvent]. */
+    @JvmStatic
+    fun logProjectEvent(event: AnalyticsEvent) {
+        AnalyticsEvents.logEvent(event)
+    }
+{% if features.iap %}
+    // -----------------------------------------------------------------------
+    // IAP — qua firebase-events core (không có tracker tương ứng ở :app-events)
+    // -----------------------------------------------------------------------
+
+    @JvmStatic
+    fun logIap(
+        where: String,
+        paymentSuccess: Boolean,
+        isTrial: Boolean,
+        productId: String,
+    ) {
+        AnalyticsEvents.logIAPEv(
+            IAPEv(
+                where = where,
+                paymentSuccess = paymentSuccess,
+                isTrial = isTrial,
+                productId = productId,
+            )
+        )
+    }
+{% endif %}
+{% if features.ads %}
+    // -----------------------------------------------------------------------
+    // Ads — forward sang AdsEventTracker (:app-events) thay vì gọi raw
+    // AnalyticsEvents.logLoadAdEv/logShowAdEv. Tracker tự bump `ad_engagement_level`
+    // user property + handle isTestMode ad_id attachment. Cần gọi
+    // AdsEventTracker.init(context, isTestMode) 1 lần trong Application.onCreate
+    // (AnalyticsBootstrap.init đã handle).
+    // -----------------------------------------------------------------------
+
+    /**
+     * Log `load_ad_ev`.
+     * @param adType `banner` / `inter` / `app_open` / `reward` / `native`
+     * @param action `load` / `retry` / `loaded` / `load_failed`
+     * @param adId Optional — chỉ attach khi isTestMode=true
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun logAdLoad(adType: String, action: String, adId: String? = null) {
+        AdsEventTracker.logLoadAd(adType, action, adId)
+    }
+
+    /**
+     * Log `show_ad_ev` + bump `ad_engagement_level` user property tự động.
+     * @param context Application context (cho FirebasePrefs.adShowedCount)
+     * @param adType `banner` / `inter` / `app_open` / `reward` / `native`
+     * @param result `show_success` / `show_failed` / `dismissed` / ...
+     * @param adId Optional — chỉ attach khi isTestMode=true
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun logAdShow(context: Context, adType: String, result: String, adId: String? = null) {
+        AdsEventTracker.logShowAd(context, adType, result, adId)
+    }
+
+    /** Log `click_ad_ev`. */
+    @JvmStatic
+    fun logAdClick(adType: String, screenName: String, duration: Int) {
+        AdsEventTracker.logClickAd(adType, screenName, duration)
+    }
+
+    /** Log `paid_ad_impression`. Pass adapter wrap mediation SDK's revenue payload. */
+    @JvmStatic
+    fun logPaidAd(adRevenue: AdRevenueLike) {
+        AdsEventTracker.logPaidAd(adRevenue)
+    }
+{% endif %}
+{% if features.rate_dialog %}
+    // -----------------------------------------------------------------------
+    // Rate dialog — forward sang RateDialogEventTracker (:app-events).
+    // Signature richer hơn raw `_ShowRateDialogEv` — capture đầy đủ context
+    // showCount + appOpenedCount + buttonClicked giúp phân tích retention.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Log `show_rate_dialog_ev`.
+     *
+     * @param where Screen showing the dialog (vd `"home_back_3rd"`)
+     * @param showCount Số lần dialog đã show từ lúc install
+     * @param appOpenedCount Số lần app mở từ lúc install
+     * @param buttonNameClicked Nút bấm — `RateUs` / `NoT` / `Later` / `Good` /
+     *   `NotG` / `CloseD` / `CloseDByBack`
+     * @param rateStars Sao đánh giá (1–5); pass 0 khi UI không có star value
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun logRateDialog(
+        where: String,
+        showCount: Int,
+        appOpenedCount: Int,
+        buttonNameClicked: String,
+        rateStars: Int = 0,
+    ) {
+        RateDialogEventTracker.logShowRateDialog(
+            where = where,
+            showCount = showCount,
+            appOpenedCount = appOpenedCount,
+            buttonNameClicked = buttonNameClicked,
+            rateStars = rateStars,
+        )
+    }
+{% endif %}
+{% if features.open_app_from %}
+    // -----------------------------------------------------------------------
+    // open_app_from_ev — forward sang OpenAppFromIntent (:app-events).
+    // Call từ MainActivity.onCreate + onNewIntent để dispatch source theo
+    // EXTRA_OPEN_FROM trong intent. Producer side (notification builder,
+    // widget v.v.) gọi OpenAppFromIntent.putSource(intent, source) khi build.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Dispatch `open_app_from_ev` từ launcher Activity. Gọi trong CẢ
+     * `onCreate(savedInstanceState)` VÀ `onNewIntent(intent)` (singleTop/
+     * singleTask Activity routes second-tap qua onNewIntent).
+     *
+     * @param intent Activity's intent (getIntent() hoặc onNewIntent's param)
+     * @param defaultSource Source log khi intent là `ACTION_MAIN` không extras
+     *   (vd `APP_ICON` cho launcher icon launch)
+     */
+    @JvmStatic
+    fun logOpenAppFrom(intent: android.content.Intent, defaultSource: OpenAppSource) {
+        OpenAppFromIntent.logFromIntent(intent, defaultSource)
+    }
+{% endif %}
+{% if features.onboarding %}
+    // -----------------------------------------------------------------------
+    // Onboarding
+    // -----------------------------------------------------------------------
+
+    @JvmStatic
+    fun logOnboardingStep(stepIndex: Int, stepName: String, completed: Boolean) {
+        AnalyticsEvents.logEvent(OnboardingStepEv(stepIndex, stepName, completed))
+    }
+{% endif %}
+{% for perm in features.permissions %}
+{% if loop.first %}
+    // -----------------------------------------------------------------------
+    // Permission grants
+    // -----------------------------------------------------------------------
+{% endif %}
+    @JvmStatic
+    fun logAllow{{ perm | lower | replace('_', ' ') | title | replace(' ', '') }}(granted: Boolean) {
+        AnalyticsUserProperties.logCustomUserProperty(
+            userPropertyName = "allow_{{ perm | lower }}",
+            property = if (granted) "1" else "0",
+        )
+    }
+{% endfor %}
+
+    // -----------------------------------------------------------------------
+    // Internals
+    // -----------------------------------------------------------------------
+
+    private fun secondsSinceAppOpen(): Int {
+        val openedAt = AnalyticsModule.getAppOpenedTimestamp() ?: return 0
+        return ((System.currentTimeMillis() - openedAt) / 1000).toInt()
+    }
+}

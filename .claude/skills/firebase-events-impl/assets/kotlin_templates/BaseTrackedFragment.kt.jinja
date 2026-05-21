@@ -1,0 +1,120 @@
+package {{ package }}.event
+
+import androidx.fragment.app.Fragment
+
+/**
+ * Base class for every Fragment in {{ project_name }} that represents a
+ * distinct screen.
+ *
+ * Two flavors of fragment lifecycle to consider:
+ *
+ *   1. **Standalone fragment** (FragmentContainerView, Navigation Component) —
+ *      `onResume` / `onPause` correctly bracket visibility. Default behaviour
+ *      handles this automatically.
+ *
+ *   2. **Tab fragment inside a ViewPager / ViewPager2** — every tab is
+ *      "resumed" at the same time, so `onResume` is NOT a reliable visibility
+ *      signal. For these fragments, set [useUserVisibleHint] to `true` and
+ *      call [setFragmentVisible] from the host's `onPageSelected` callback.
+ *      Default behaviour is disabled in that case.
+ *
+ * In both flavors, the base class fires:
+ *   - `screen_view_ev` with state=`START` when visible
+ *   - `screen_view_ev` with state=`STOP`  with duration when hidden
+ */
+abstract class BaseTrackedFragment : Fragment() {
+
+    /**
+     * Screen name constant. Pull from `ScreenName.X` — never a literal.
+     */
+    protected abstract fun getScreenName(): String
+
+    protected open fun getPopupName(): String = PopupName.NONE
+
+    /**
+     * Override and return `true` if this fragment lives inside a ViewPager
+     * (or any host that keeps multiple fragments resumed simultaneously).
+     * The host MUST then call [setFragmentVisible] when the tab changes.
+     */
+    protected open val useUserVisibleHint: Boolean = false
+
+    protected open fun shouldTrackScreen(): Boolean = true
+
+    private var resumeAtMs: Long = 0L
+    private var isCurrentlyVisible: Boolean = false
+
+    // -----------------------------------------------------------------------
+    // Lifecycle hooks — used when useUserVisibleHint == false
+    // -----------------------------------------------------------------------
+
+    override fun onResume() {
+        super.onResume()
+        if (useUserVisibleHint) return
+        startTrackingIfNeeded()
+    }
+
+    override fun onPause() {
+        if (!useUserVisibleHint) {
+            stopTrackingIfNeeded()
+        }
+        super.onPause()
+    }
+
+    // -----------------------------------------------------------------------
+    // ViewPager hook — host calls this on tab change
+    // -----------------------------------------------------------------------
+
+    /**
+     * Call from the host's `ViewPager2.OnPageChangeCallback.onPageSelected`
+     * (passing `true` for the new tab and `false` for the previous one).
+     *
+     * Safe to call repeatedly — duplicate `visible=true` calls are no-ops.
+     */
+    fun setFragmentVisible(visible: Boolean) {
+        if (visible) startTrackingIfNeeded() else stopTrackingIfNeeded()
+    }
+
+    private fun startTrackingIfNeeded() {
+        if (!shouldTrackScreen() || isCurrentlyVisible) return
+        isCurrentlyVisible = true
+        resumeAtMs = System.currentTimeMillis()
+        AnalyticsEventsUtils.logScreenStart(
+            screenName = getScreenName(),
+            popupName = getPopupName(),
+        )
+    }
+
+    private fun stopTrackingIfNeeded() {
+        if (!isCurrentlyVisible) return
+        isCurrentlyVisible = false
+        val durationSec = if (resumeAtMs > 0L) {
+            ((System.currentTimeMillis() - resumeAtMs) / 1000).toInt()
+        } else 0
+        AnalyticsEventsUtils.logScreenStop(
+            screenName = getScreenName(),
+            durationSec = durationSec,
+            popupName = getPopupName(),
+        )
+        resumeAtMs = 0L
+    }
+
+    // -----------------------------------------------------------------------
+    // Click logging helpers
+    // -----------------------------------------------------------------------
+
+    protected fun logClickBtn(event: ClickBtnEv) {
+        AnalyticsEventsUtils.logClickBtn(event)
+    }
+
+    protected fun logClickBtn(event: ClickBtnEv, value: String) {
+        AnalyticsEventsUtils.logClickBtn(event, value)
+    }
+
+    protected fun logClickBtn(buttonName: String, popupName: String = getPopupName()) {
+        AnalyticsEventsUtils.logClickBtn(
+            screenName = getScreenName(),
+            buttonName = buttonName,
+            popupName = popupName,
+        )
+    }
+}

@@ -1,0 +1,257 @@
+package {{ package }}.event
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
+
+/**
+ * Compose tracking primitives for {{ project_name }}.
+ *
+ * The pattern:
+ *
+ *   1. Wrap each top-level screen composable in [TrackedScreen] — this is
+ *      the only place that names the screen. Nested composables read the
+ *      name via [LocalScreenName] / [LocalPopupName].
+ *
+ *   2. Replace `Button { ... }` with [TrackedButton] (passing `buttonName`)
+ *      to auto-fire `click_btn_ev`. Same for [TrackedIconButton] and
+ *      [Modifier.trackedClickable] for row/card click patterns.
+ *
+ *   3. For dialogs / bottom sheets that occlude the underlying screen,
+ *      wrap their content in [TrackedPopup] so click events inside the
+ *      popup carry the correct `popup_name`.
+ *
+ * [LocalScreenName] is `staticCompositionLocalOf` — switching screens
+ * recreates the subtree so we don't need fine-grained invalidation.
+ * [LocalPopupName] is `compositionLocalOf` since it can change without
+ * tearing down the screen (e.g. opening a popup over Home).
+ */
+
+val LocalScreenName = staticCompositionLocalOf { "" }
+val LocalPopupName = compositionLocalOf { PopupName.NONE }
+
+// ===========================================================================
+// Screen tracking
+// ===========================================================================
+
+/**
+ * Wrap a screen-level composable to fire `screen_view_ev` automatically.
+ *
+ * - Fires `START` once when the composable enters composition.
+ * - Fires `STOP` with computed duration when it leaves composition.
+ * - Provides [LocalScreenName] so nested composables don't need the param.
+ *
+ * Usage:
+ * ```
+ * @Composable
+ * fun HomeScreen() {
+ *     TrackedScreen(ScreenName.HOME) {
+ *         // ... screen content
+ *     }
+ * }
+ * ```
+ */
+@Composable
+fun TrackedScreen(
+    screenName: String,
+    popupName: String = PopupName.NONE,
+    content: @Composable () -> Unit,
+) {
+    DisposableEffect(screenName, popupName) {
+        AnalyticsEventsUtils.logScreenStart(screenName, popupName)
+        val startedAt = System.currentTimeMillis()
+        onDispose {
+            val durationSec = ((System.currentTimeMillis() - startedAt) / 1000).toInt()
+            AnalyticsEventsUtils.logScreenStop(
+                screenName = screenName,
+                durationSec = durationSec,
+                popupName = popupName,
+            )
+        }
+    }
+    CompositionLocalProvider(
+        LocalScreenName provides screenName,
+        LocalPopupName provides popupName,
+    ) {
+        content()
+    }
+}
+
+// ===========================================================================
+// Popup tracking
+// ===========================================================================
+
+/**
+ * Wrap dialog / bottom-sheet content. Fires `screen_view_ev` with the
+ * underlying screen name + this popup name, and sets [LocalPopupName] so
+ * click events inside carry the right context.
+ *
+ * Usage:
+ * ```
+ * ModalBottomSheet(...) {
+ *     TrackedPopup(PopupName.LANGUAGE_SHEET) {
+ *         LanguagePicker(...)
+ *     }
+ * }
+ * ```
+ */
+@Composable
+fun TrackedPopup(
+    popupName: String,
+    content: @Composable () -> Unit,
+) {
+    val screenName = LocalScreenName.current
+    DisposableEffect(popupName, screenName) {
+        AnalyticsEventsUtils.logScreenStart(screenName, popupName)
+        val startedAt = System.currentTimeMillis()
+        onDispose {
+            val durationSec = ((System.currentTimeMillis() - startedAt) / 1000).toInt()
+            AnalyticsEventsUtils.logScreenStop(
+                screenName = screenName,
+                durationSec = durationSec,
+                popupName = popupName,
+            )
+        }
+    }
+    CompositionLocalProvider(LocalPopupName provides popupName) {
+        content()
+    }
+}
+
+// ===========================================================================
+// Click tracking
+// ===========================================================================
+
+/**
+ * Drop-in replacement for `Button` that also fires `click_btn_ev`.
+ *
+ * Usage:
+ * ```
+ * TrackedButton(
+ *     buttonName = HomeBtnEv.HOME_CONNECT,
+ *     onClick = viewModel::connect,
+ * ) { Text("Connect") }
+ * ```
+ *
+ * For stateful buttons (toggle, checkbox) — pass the specific variant:
+ *   `HomeBtnEv.HOME_VPN_ON` when state becomes ON, `_OFF` otherwise.
+ */
+@Composable
+fun TrackedButton(
+    buttonName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = ButtonDefaults.shape,
+    colors: ButtonColors = ButtonDefaults.buttonColors(),
+    elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
+) {
+    val screenName = LocalScreenName.current
+    val popupName = LocalPopupName.current
+    Button(
+        onClick = {
+            AnalyticsEventsUtils.logClickBtn(screenName, buttonName, popupName)
+            onClick()
+        },
+        modifier = modifier,
+        enabled = enabled,
+        shape = shape,
+        colors = colors,
+        elevation = elevation,
+        border = border,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        content = { content() },
+    )
+}
+
+/**
+ * Drop-in replacement for `IconButton` that also fires `click_btn_ev`.
+ * Use this for back arrows, close X, share icons, etc.
+ */
+@Composable
+fun TrackedIconButton(
+    buttonName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
+) {
+    val screenName = LocalScreenName.current
+    val popupName = LocalPopupName.current
+    IconButton(
+        onClick = {
+            AnalyticsEventsUtils.logClickBtn(screenName, buttonName, popupName)
+            onClick()
+        },
+        modifier = modifier,
+        enabled = enabled,
+        colors = colors,
+        interactionSource = interactionSource,
+        content = content,
+    )
+}
+
+/**
+ * Returns a [Modifier] that behaves like [Modifier.clickable] but also fires
+ * `click_btn_ev`. Use for row/card click patterns where you can't reach for
+ * a Button.
+ *
+ * Usage:
+ * ```
+ * Row(modifier = Modifier.trackedClickable(SettingsBtnEv.SETTINGS_LANGUAGE) {
+ *     navigate("language")
+ * }) { ... }
+ * ```
+ */
+@Composable
+fun Modifier.trackedClickable(
+    buttonName: String,
+    onClick: () -> Unit,
+): Modifier {
+    val screenName = LocalScreenName.current
+    val popupName = LocalPopupName.current
+    return this.clickable {
+        AnalyticsEventsUtils.logClickBtn(screenName, buttonName, popupName)
+        onClick()
+    }
+}
+
+/**
+ * Imperative helper for cases where you have a click lambda that already
+ * does work and you just want to add tracking inline:
+ *
+ * ```
+ * Button(onClick = { logComposeClick(HomeBtnEv.HOME_CONNECT); doStuff() })
+ * ```
+ *
+ * Prefer [TrackedButton] when starting fresh. This helper exists for
+ * incremental adoption.
+ */
+@Composable
+fun logComposeClick(buttonName: String) {
+    val screenName = LocalScreenName.current
+    val popupName = LocalPopupName.current
+    AnalyticsEventsUtils.logClickBtn(screenName, buttonName, popupName)
+}

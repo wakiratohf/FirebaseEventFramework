@@ -1,0 +1,31 @@
+package {{ package }}.event
+
+/**
+ * Marker interface for enums representing `click_btn_ev` variants.
+ *
+ * Theo `firebase-events/docs/NAMING_CONVENTION.md`:
+ *   - **1 enum PER SCREEN** (không phải 1 global catalog).
+ *   - Tên hằng: `{SCREEN_UPPER}_{ACTION_UPPER}` hoặc
+ *     `{SCREEN_UPPER}_{POPUP_UPPER}_{ACTION_UPPER}` cho button trong popup.
+ *   - KHÔNG prefix `BTN_` (vd ❌ `BTN_HOME_BACK`, ✅ `HOME_BACK`).
+ *   - `buttonName` value: camelCase, không `_`, không `btn` prefix.
+ *
+ * Module `:firebase-events-lint` ship UAST detector match BẤT KỲ enum implement
+ * interface tên `ClickBtnEv` (any package) — emit 4 Lint Issues khi vi phạm
+ * convention buttonName:
+ *
+ *   - `ClickBtnEvUnderscore` — `buttonName` chứa `_`
+ *   - `ClickBtnEvBtnPrefix`  — `buttonName` bắt đầu `btn`
+ *   - `ClickBtnEvNotCamelCase` — `buttonName` không camelCase
+ *   - `ClickBtnEvEmpty` — `buttonName` rỗng
+ *
+ * DO NOT add enum entries / files by hand — update `docs/analytics/event-spec.yaml`
+ * rồi `/analytics-generate`. Mỗi screen có buttons sẽ sinh 1 file `<Screen>BtnEv.kt`.
+ *
+ * AUTO-GENERATED — không edit. Chỉnh spec rồi `/analytics-generate`.
+ */
+interface ClickBtnEv {
+    val screenName: String
+    val buttonName: String
+    val popupName: String
+}

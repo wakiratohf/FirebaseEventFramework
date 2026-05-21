@@ -1,0 +1,24 @@
+package {{ package }}.event
+
+/**
+ * Catalog of all trackable screen names in {{ project_name }}.
+ *
+ * Theo `firebase-events/docs/NAMING_CONVENTION.md`:
+ *   - **Const name (LHS)**: `SCREAMING_SNAKE_CASE` (vd `MANAGE_LOCATION`)
+ *   - **Value (RHS)**: `camelCase` lowercase first (vd `"manageLocation"`)
+ *
+ * Runtime module's `convertSnakeCaseToCamelCase()` chuyển camelCase value sang
+ * PascalCase khi ghép vào event name Firebase (vd `manageLocation` → `ManageLocation`).
+ *
+ * DO NOT add constants by hand — update `docs/analytics/event-spec.yaml` and run
+ * `/analytics-generate`.
+ */
+object ScreenName {
+{% for s in screens %}
+    /** {{ s.class }} ({{ s.kind }}) */
+    const val {{ s.id | upper_snake }} = "{{ s.id | camel }}"
+{% endfor %}
+
+    /** Convenience: empty / unset screen — never use as a real value. */
+    const val NONE = ""
+}

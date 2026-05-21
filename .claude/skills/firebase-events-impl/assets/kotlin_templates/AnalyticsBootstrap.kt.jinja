@@ -1,0 +1,109 @@
+package {{ package }}.event
+
+import android.app.Activity
+import android.app.Application
+import com.tohsoft.firebase_events.AnalyticsModule
+import com.tohsoft.firebase_events.utils.FirebasePrefs
+import com.tohsoft.app_event.AppEventsInstaller
+{% if features.ads %}import com.tohsoft.app_event.AdsEventTracker
+{% endif %}{% if features.ads %}import com.tohsoft.ads.AdsManager
+{% endif %}
+
+/**
+ * One-line analytics bootstrap — gọi trong `Application.onCreate()`.
+ *
+ * Wire 3{% if features.ads %}–4{% endif %} thứ theo `app-events/docs/INTEGRATION.md`:
+ *   1. `AnalyticsModule.init` — core SDK (firebase-events) [Step 3 prerequisite]
+ *   2. `FirebasePrefs.saveAppOpenedTimestamp` — mốc session start [Step 3]
+ *   3. `AppEventsInstaller.install` — lifecycle events (Pattern A — Step 4) +
+ *      screenNameProvider map Activity → ScreenName const (Step 5)
+{% if features.ads %} *   4. `AdsManager.initialize` — AdMob bridge (`:ads` module)
+{% endif %} *
+ * Dùng:
+ * ```kotlin
+ * class {{ application_class | replace((package + '.'), '') | default('MyApp') }} : Application() {
+ *     override fun onCreate() {
+ *         super.onCreate()
+ *         AnalyticsBootstrap.init(
+ *             app = this,
+ *             isTestMode = BuildConfig.DEBUG,
+ *         )
+ *     }
+ * }
+ * ```
+ *
+ * Nếu app cần custom (vd `sessionProvider` đo qua ProcessLifecycleOwner, hoặc
+ * inject WebhookSender), gọi từng API trực tiếp thay vì qua bootstrap này.
+ *
+ * AUTO-GENERATED — không edit. Chỉnh spec rồi `/analytics-generate`.
+ */
+object AnalyticsBootstrap {
+
+    /**
+     * @param app Application instance (cho AnalyticsModule + AppEventsInstaller).
+     * @param isTestMode Nếu true → events dump ra Logcat (tag `AnalyticsEvents`)
+     *   thay vì gửi Firebase. Pass `BuildConfig.DEBUG`.
+     * @param installAppEvents Nếu false → bỏ qua `AppEventsInstaller.install`.
+     *   Set false KHI VÀ CHỈ KHI app dùng Pattern B/C/D từ INTEGRATION.md (gọi
+     *   `TimeOpenAppTracker.onSessionStart()` / `AppExitTracker.onAppExit()` thủ công).
+     *   KHÔNG ĐƯỢC mix Pattern A với explicit calls → double-log events.
+{% if features.ads %}     * @param installAds Nếu false → bỏ qua `AdsManager.initialize`.
+     *   Set false khi app khởi tạo MobileAds qua flow riêng.
+{% endif %}     */
+    fun init(
+        app: Application,
+        isTestMode: Boolean,
+        installAppEvents: Boolean = true,
+{% if features.ads %}        installAds: Boolean = true,
+{% endif %}    ) {
+        // (1) Init firebase-events SDK
+        AnalyticsModule.init(
+            appProvider = { app },
+            sessionProvider = { FirebasePrefs.getAppOpenedTimestamp(app) },
+            isTestMode = isTestMode,
+        )
+
+        // (2) Mark session start — cho AppExitTracker tính duration_sec
+        // (xem INTEGRATION.md Step 3: bắt buộc gọi BEFORE AppEventsInstaller.install)
+        FirebasePrefs.saveAppOpenedTimestamp(app, System.currentTimeMillis())
+
+        // (3) Wire app-events lifecycle observers (Pattern A — INTEGRATION.md Step 4).
+        // Mutually exclusive với gọi tay TimeOpenAppTracker.onSessionStart() /
+        // AppExitTracker.onAppExit() — chọn 1, KHÔNG wire cả hai (double-log).
+        if (installAppEvents) {
+            AppEventsInstaller.install(app, ::resolveScreenName)
+        }
+{% if features.ads %}
+        // (4a) Init AdsEventTracker — tracker này bump ad_engagement_level user
+        // property + persist FirebasePrefs.adShowedCount. Phải init TRƯỚC
+        // AdsManager (step 4b) vì AdMob callback có thể fire ngay khi initialize.
+        AdsEventTracker.init(app, isTestMode = isTestMode)
+
+        // (4b) Init :ads module — MobileAds SDK + AdMob → AdsEventTracker bridge.
+        // Gọi SAU AnalyticsModule.init vì AdsEventTracker lần đầu log
+        // ad_engagement_level=0. Phần nặng của MobileAds tự chạy off-main-thread.
+        if (installAds) {
+            AdsManager.initialize(app, isTestMode = isTestMode)
+        }
+{% endif %}    }
+
+    /**
+     * Map Activity class → `ScreenName` const (INTEGRATION.md Step 5).
+     *
+     * Tốt hơn default `simpleName` của AppEventsInstaller vì:
+     *   - Trả về domain name (`"home"`) thay vì raw class name (`"HomeActivity"`)
+     *   - Đồng bộ với `screen_view_ev` và `last_active_screen` (cùng `ScreenName` catalog)
+     *   - Skip splash/ad activities (return null) → giữ previous screen name
+     *
+     * Pass-through `null` cho `ignore_screens` từ spec — `AppExitTracker` sẽ giữ
+     * screen name trước đó, tránh attribute `app_exit` sai cho splash/ad screen.
+     */
+    private fun resolveScreenName(activity: Activity): String? {
+        return when (activity.javaClass.simpleName) {
+{% for entry in screen_name_map %}
+            "{{ entry.class_name }}" -> {% if entry.ignore %}null{% else %}ScreenName.{{ entry.screen_const }}{% endif +%}
+{% endfor %}
+            else -> activity.javaClass.simpleName  // unknown activity — fall back
+        }
+    }
+}

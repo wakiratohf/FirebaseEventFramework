@@ -1,0 +1,45 @@
+package {{ package }}.event
+
+import android.app.AlertDialog
+import android.content.Context
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+
+/**
+ * `MaterialAlertDialogBuilder` extension tự gắn analytics tracking.
+ *
+ * Pattern A trong design — ÍT việc nhất cho dev: chỉ thay `MaterialAlertDialogBuilder(ctx)`
+ * bằng `TrackedDialogBuilder(ctx, screen, popup)`, KHÔNG cần wire listener,
+ * dialog tự fire `screen_view_ev` khi đóng.
+ *
+ * ```kotlin
+ * TrackedDialogBuilder(this, ScreenName.HOME, PopupName.LOGOUT_CONFIRM)
+ *     .setTitle("Đăng xuất?")
+ *     .setMessage("Bạn chắc chắn?")
+ *     .setPositiveButton("Có") { _, _ ->
+ *         AnalyticsEventsUtils.logClickBtn(ClickBtnEvCatalog.HOME_BTN_LOGOUT_CONFIRM)
+ *         logout()
+ *     }
+ *     .setNegativeButton("Huỷ", null)
+ *     .show()
+ * ```
+ *
+ * `show()` được override để: tự `setOnShowListener` + `setOnDismissListener` ngay
+ * trước khi hiện dialog → analytics tự fire không sót.
+ *
+ * AUTO-GENERATED — không edit. Chỉnh spec rồi `/analytics-generate`.
+ */
+class TrackedDialogBuilder(
+    context: Context,
+    private val screenName: String,
+    private val popupName: String,
+) : MaterialAlertDialogBuilder(context) {
+
+    override fun show(): AlertDialog {
+        val dialog = create()
+        val tracker = TrackedDialog(screenName, popupName)
+        dialog.setOnShowListener { tracker.onShow() }
+        dialog.setOnDismissListener { tracker.onClosed() }
+        dialog.show()
+        return dialog
+    }
+}

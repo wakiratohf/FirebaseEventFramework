@@ -1,0 +1,29 @@
+package {{ package }}.event
+
+/**
+ * `click_btn_ev` variants cho màn hình **{{ screen.id }}** ({{ screen.class }}).
+ *
+ * Convention (xem `firebase-events/docs/NAMING_CONVENTION.md`):
+ *   - Tên hằng: `{{ screen_const }}_<ACTION>` hoặc `{{ screen_const }}_<POPUP>_<ACTION>`.
+ *   - `buttonName` value: camelCase, no `_`, no `btn` prefix.
+ *   - Module `:firebase-events-lint` enforce convention ở compile-time.
+ *
+ * Tổng: {{ entries|length }} entries{% if buttons_in_popups > 0 %} ({{ buttons_in_popups }} trong popup){% endif %}.
+ *
+ * AUTO-GENERATED — không edit. Chỉnh spec rồi `/analytics-generate`.
+ */
+enum class {{ class_name }}(
+    override val screenName: String,
+    override val buttonName: String,
+    override val popupName: String,
+) : ClickBtnEv {
+{% for e in entries %}
+    /** {{ e.description }} */
+    {{ e.const_name }}(
+        screenName = ScreenName.{{ screen_const }},
+        buttonName = "{{ e.button_name }}",
+        popupName = {% if e.popup_const %}PopupName.{{ e.popup_const }}{% else %}""{% endif %},
+    ),
+{% endfor %}
+    ;
+}

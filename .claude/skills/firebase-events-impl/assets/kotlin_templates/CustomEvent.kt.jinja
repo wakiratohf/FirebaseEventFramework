@@ -1,0 +1,59 @@
+package {{ package }}.event
+
+import android.os.Bundle
+import androidx.core.os.bundleOf
+import com.tohsoft.firebase_events.models.AnalyticsEvent
+
+/**
+ * Custom analytics event for {{ project_name }}.
+ *
+ * {{ event.description or "Generated from event-spec.yaml — edit the spec, not this file." }}
+ *
+ * Fire via:
+ * ```
+ * AnalyticsEventsUtils.logProjectEvent(
+ *     {{ event.name | pascal }}(
+{% for p in (event.params or []) %}
+ *         {{ p.name | camel }} = {% if p.type == "string" %}"…"{% elif p.type == "int" %}0{% elif p.type == "boolean" %}false{% else %}…{% endif %},
+{% endfor %}
+ *     )
+ * )
+ * ```
+{% if event.trigger_hint %}
+ *
+{% if event.trigger_hint is mapping %}
+ * Expected trigger: `{{ event.trigger_hint.file }}::{{ event.trigger_hint.method }}`.
+{% else %}
+ * Expected trigger: `{{ event.trigger_hint }}`.
+{% endif %}
+{% endif %}
+ */
+data class {{ event.name | pascal }}(
+{% for p in (event.params or []) %}
+    val {{ p.name | camel }}: {% if p.type == "string" %}String{% elif p.type == "int" %}Int{% elif p.type == "boolean" %}Boolean{% else %}String{% endif %},
+{% endfor %}
+) : AnalyticsEvent {
+
+    override val eventName: String = "{{ event.name }}"
+
+    override fun toBundle(): Bundle = bundleOf(
+{% for p in (event.params or []) %}
+        "{{ p.name }}" to {{ p.name | camel }}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    )
+
+{% set enum_params = (event.params or []) | selectattr("enum") | list %}
+{% if enum_params %}
+    companion object {
+{% for p in enum_params %}
+        // Allowed values for [{{ p.name | camel }}]
+{% for val in p.enum %}
+        const val {{ p.name | upper_snake }}_{{ val | upper_snake }}: {% if p.type == "string" %}String = "{{ val }}"{% elif p.type == "int" %}Int = {{ val }}{% else %}String = "{{ val }}"{% endif %}
+
+{% endfor %}
+
+{% endfor %}
+    }
+{% endif %}
+}

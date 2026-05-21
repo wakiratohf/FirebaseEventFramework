@@ -1,0 +1,21 @@
+package {{ package }}.event
+
+/**
+ * Catalog of all trackable popup / dialog / bottom-sheet names in {{ project_name }}.
+ *
+ * Theo `firebase-events/docs/NAMING_CONVENTION.md`:
+ *   - **Const name (LHS)**: `SCREAMING_SNAKE_CASE` (vd `RATE_DIALOG`)
+ *   - **Value (RHS)**: `camelCase` lowercase first (vd `"rateDialog"`)
+ *
+ * DO NOT add constants by hand — update `docs/analytics/event-spec.yaml` and run
+ * `/analytics-generate`.
+ */
+object PopupName {
+{% for p in popups %}
+    /** {{ p.class | default('(no class)') }} */
+    const val {{ p.id | upper_snake }} = "{{ p.id | camel }}"
+{% endfor %}
+
+    /** No popup is active. Default value for `popupName` parameter. */
+    const val NONE = ""
+}

@@ -1,0 +1,125 @@
+package {{ package }}.event
+
+import android.app.Dialog
+import android.content.DialogInterface
+import android.os.SystemClock
+
+/**
+ * Base helper để track dialog/popup như một screen_view_ev riêng.
+ *
+ * Tự động:
+ * - Lúc dialog SHOW: set user property `screen_open = sr_<screen>_<popup>`
+ * - Lúc dialog DISMISS: fire `screen_view_ev` với
+ *     `screen_name = <screen>_<popup>`
+ *     `screen_state = STOP`
+ *     `duration` = số giây dialog mở (>= 1, không log nếu < 1s)
+ *
+ * Có 3 cách dùng:
+ *
+ * 1. **Subclass** (cho dialog tự quản lý):
+ * ```kotlin
+ * class RateDialog(ctx: Context) : Dialog(ctx) {
+ *     private val tracker = TrackedDialog(
+ *         screenName = ScreenName.HOME,
+ *         popupName = PopupName.RATE,
+ *     ).also { it.attachTo(this) }
+ * }
+ * ```
+ *
+ * 2. **Wire trực tiếp** (cho dialog dùng lẻ, không qua base):
+ * ```kotlin
+ * val tracker = TrackedDialog(ScreenName.HOME, PopupName.LOGOUT_CONFIRM)
+ * dialog.setOnShowListener { tracker.onShow() }
+ * dialog.setOnDismissListener { tracker.onClosed() }
+ * dialog.show()
+ * ```
+ *
+ * 3. **Builder Pattern** (xem `TrackedDialogBuilder` — auto-wire khi build):
+ * ```kotlin
+ * TrackedDialogBuilder(ctx, ScreenName.HOME, PopupName.RATE)
+ *     .setTitle("Rate us")
+ *     .setPositiveButton("Yes") { _, _ -> ... }
+ *     .show()
+ * ```
+ *
+ * AUTO-GENERATED — không edit. Chỉnh spec rồi `/analytics-generate`.
+ */
+class TrackedDialog(
+    private val screenName: String,
+    private val popupName: String,
+) {
+    private var openTimestampMs: Long = 0L
+    private var isClosed: Boolean = true   // chống set property trùng nếu onShow gọi nhiều lần
+
+    /** Wire listeners lên dialog — sau gọi này dev không cần làm gì thêm. */
+    fun attachTo(dialog: Dialog) {
+        dialog.setOnShowListener { onShow() }
+        dialog.setOnDismissListener { onClosed() }
+    }
+
+    /** Gọi tay nếu không qua [attachTo] — vd dialog standalone không có listener API. */
+    fun onShow() {
+        openTimestampMs = SystemClock.elapsedRealtime()
+        if (isClosed && screenName.isNotEmpty() && popupName.isNotEmpty()) {
+            AnalyticsEventsUtils.logScreenStart(screenName, popupName)
+        }
+        isClosed = false
+    }
+
+    fun onClosed() {
+        if (openTimestampMs == 0L) return  // chưa từng show
+        isClosed = true
+        val durationSec = ((SystemClock.elapsedRealtime() - openTimestampMs) / 1000).toInt()
+        openTimestampMs = 0L
+        if (durationSec <= 0) return  // dismiss ngay khi mở (vd bị huỷ flash) → bỏ qua
+        if (screenName.isEmpty() || popupName.isEmpty()) return
+        AnalyticsEventsUtils.logScreenStop(
+            screenName = screenName,
+            popupName = popupName,
+            durationSec = durationSec.toLong(),
+        )
+    }
+}
+
+
+/**
+ * Optional base class — dialog kế thừa nó để tự động track không cần setup listener.
+ *
+ * Dùng khi project có một `BaseDialog` chung sẵn — cho thừa kế từ lớp này thay vì
+ * `Dialog`/`AppCompatDialog` trực tiếp.
+ *
+ * ```kotlin
+ * class RateDialog(ctx: Context) : BaseTrackedDialog(
+ *     context = ctx,
+ *     screenName = ScreenName.HOME,
+ *     popupName = PopupName.RATE,
+ * ) {
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *         super.onCreate(savedInstanceState)
+ *         setContentView(R.layout.dialog_rate)
+ *     }
+ * }
+ * ```
+ */
+abstract class BaseTrackedDialog(
+    context: android.content.Context,
+    private val screenName: String,
+    private val popupName: String,
+) : Dialog(context) {
+
+    private val tracker by lazy { TrackedDialog(screenName, popupName) }
+
+    init {
+        setOnShowListener { tracker.onShow() }
+        setOnDismissListener { tracker.onClosed() }
+    }
+
+    /** Log click button trong dialog. Tự ghép popupName. */
+    protected fun logClickBtn(buttonName: String) {
+        AnalyticsEventsUtils.logClickBtn(
+            screenName = screenName,
+            buttonName = buttonName,
+            popupName = popupName,
+        )
+    }
+}

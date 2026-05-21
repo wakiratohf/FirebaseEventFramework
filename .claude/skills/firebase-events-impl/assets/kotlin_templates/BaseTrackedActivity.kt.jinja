@@ -1,0 +1,112 @@
+package {{ package }}.event
+
+import androidx.appcompat.app.AppCompatActivity
+
+/**
+ * Base class for every Activity in {{ project_name }} that should fire
+ * `screen_view_ev` automatically.
+ *
+ * Subclass and override [getScreenName] to return one of the `ScreenName.X`
+ * constants. The base class handles:
+ *
+ *   - `onResume`  → `AnalyticsEventsUtils.logScreenStart(...)`
+ *   - `onPause`   → `AnalyticsEventsUtils.logScreenStop(..., durationSec)`
+ *
+ * Duration is the wall-clock time between `onResume` and `onPause`, rounded
+ * to the nearest second. Sub-second screens (an Activity that finishes inside
+ * `onCreate`) report `duration=0` — which is intentional, so QC can still
+ * see the screen was opened.
+ *
+ * If your screen is *also* a fragment-host that swaps tabs, prefer
+ * [BaseTrackedFragment] for each tab and override [shouldTrackScreen] to
+ * return `false` on the host activity.
+ */
+abstract class BaseTrackedActivity : AppCompatActivity() {
+
+    /**
+     * Return the screen name constant. Must come from `ScreenName.X` —
+     * never a literal string.
+     *
+     * Example:
+     * ```
+     * override fun getScreenName(): String = ScreenName.HOME
+     * ```
+     */
+    protected abstract fun getScreenName(): String
+
+    /**
+     * Optional override — return the active popup name when a fullscreen
+     * dialog is on top of this activity. Default: [PopupName.NONE].
+     */
+    protected open fun getPopupName(): String = PopupName.NONE
+
+    /**
+     * Override and return `false` to disable auto screen tracking on this
+     * activity (e.g. a transient splash you don't want in analytics).
+     */
+    protected open fun shouldTrackScreen(): Boolean = true
+
+    private var resumeAtMs: Long = 0L
+
+    override fun onResume() {
+        super.onResume()
+        if (!shouldTrackScreen()) return
+        resumeAtMs = System.currentTimeMillis()
+        AnalyticsEventsUtils.logScreenStart(
+            screenName = getScreenName(),
+            popupName = getPopupName(),
+        )
+    }
+
+    override fun onPause() {
+        if (shouldTrackScreen() && resumeAtMs > 0L) {
+            val durationSec = ((System.currentTimeMillis() - resumeAtMs) / 1000).toInt()
+            AnalyticsEventsUtils.logScreenStop(
+                screenName = getScreenName(),
+                durationSec = durationSec,
+                popupName = getPopupName(),
+            )
+            resumeAtMs = 0L
+        }
+        super.onPause()
+    }
+
+    // -----------------------------------------------------------------------
+    // Convenience for click logging — uses current screen automatically.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Log a click event on this screen.
+     *
+     * Preferred call site — pass a `ClickBtnEvCatalog.X` enum value:
+     * ```
+     * binding.btnConnect.setOnClickListener {
+     *     logClickBtn(ClickBtnEvCatalog.HOME_BTN_CONNECT)
+     *     // ... handle click
+     * }
+     * ```
+     */
+    protected fun logClickBtn(event: ClickBtnEv) {
+        AnalyticsEventsUtils.logClickBtn(event)
+    }
+
+    /**
+     * Log a click event with an attached identifier (FAQ item id, package
+     * name, etc). Goes into `click_btn_ev_value`, NOT the event name.
+     */
+    protected fun logClickBtn(event: ClickBtnEv, value: String) {
+        AnalyticsEventsUtils.logClickBtn(event, value)
+    }
+
+    /**
+     * Loose-arg overload. Prefer the enum overloads above; this exists for
+     * legacy call sites or dynamically computed button names.
+     */
+    protected fun logClickBtn(buttonName: String, popupName: String = getPopupName()) {
+        AnalyticsEventsUtils.logClickBtn(
+            screenName = getScreenName(),
+            buttonName = buttonName,
+            popupName = popupName,
+        )
+    }
+}

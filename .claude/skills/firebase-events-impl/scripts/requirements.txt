@@ -1,0 +1,5 @@
+# Required Python dependencies for firebase-events-impl skill
+# Install: pip install -r requirements.txt
+
+PyYAML>=6.0
+Jinja2>=3.1
