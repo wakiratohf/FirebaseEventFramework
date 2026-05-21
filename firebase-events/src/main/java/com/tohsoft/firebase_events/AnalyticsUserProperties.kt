@@ -122,26 +122,6 @@ object AnalyticsUserProperties {
         }
     }
 
-    /** PhongNX: Sếp Hà báo không cần log properties này nữa (29/04/2026) */
-    fun logUserOpenAppInSession(sessionNumber: Int) {
-        /*logUserPropertyEv(
-            UserPropertyEv(
-                userPropertyName = USER_OPEN_APP_IN_SESSION,
-                property = "session_$sessionNumber"
-            )
-        )*/
-    }
-
-    /** PhongNX: Sếp Hà báo không cần log properties này nữa (29/04/2026) */
-    fun logEventDaysSinceInstall(days: Int) {
-        /*logUserPropertyEv(
-            UserPropertyEv(
-                userPropertyName = DAYS_SINCE_INSTALL_EV,
-                property = "day_$days"
-            )
-        )*/
-    }
-
     @JvmOverloads
     @JvmStatic
     fun logEventScreenOpen(screenName: String, popupName: String = "") {

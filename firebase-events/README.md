@@ -2,7 +2,7 @@
 
 A drop-in Firebase Analytics + Crashlytics event-tracking layer for Android apps.
 
-**Version:** see [`VERSION`](VERSION) · **License:** Apache 2.0 · **minSdk 21 · compileSdk 35 · JDK 17**
+**Version:** see [`VERSION`](VERSION) · **License:** Apache 2.0 · **minSdk 21 · compileSdk 36 · JDK 17**
 
 This module is designed to be **copy-pasted** into any Android project. It has
 zero hard dependencies on other in-house modules — the only required runtime

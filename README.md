@@ -10,16 +10,21 @@ Kho upstream / reference cho thư viện **`firebase-events`** — một lớp t
 
 | Module | Vai trò | Đặc điểm |
 |---|---|---|
-| [`firebase-events/`](firebase-events/) | Thư viện SDK (public, có SemVer) | `minSdk 21`, `compileSdk 35`, JDK 17. Không phụ thuộc module nội bộ nào — copy-paste sang repo khác là chạy. |
+| [`firebase-events/`](firebase-events/) | Thư viện SDK lõi (public, có SemVer) | `minSdk 21`, `compileSdk 36`, JDK 17. Không phụ thuộc module nội bộ nào — copy-paste sang repo khác là chạy. |
+| [`firebase-events-lint/`](firebase-events-lint/) | Lint rule đi kèm SDK | Pure-JVM (JDK 17). Enforce convention `buttonName` ở compile time (4 issue ID). Copy kèm `:firebase-events`. |
+| [`app-events/`](app-events/) | Wrapper app-level (optional, `com.tohsoft.app_event`) | `minSdk 21`, JDK 17. Drop-in tracking cho lifecycle (time_open_app / app_exit), ads, rate dialog. Phụ thuộc `:firebase-events`. |
+| [`ads/`](ads/) | Cầu nối AdMob → analytics (optional, `com.tohsoft.ads`) | `minSdk 21`, JDK 17. Khởi tạo MobileAds + track ad event qua `AdsEventTracker`. Phụ thuộc `:firebase-events` + `:app-events`. |
 | [`app/`](app/) | Demo / smoke-test (`com.example.firebaseeventframework`) | `minSdk 23`, JDK 11, Jetpack Compose. Chỉ minh hoạ pattern tích hợp, không tái sử dụng. |
 
-> Đừng đặt abstraction dùng chung vào `:app`. Đừng thêm `project(":...")` dependency vào `:firebase-events` (sẽ phá tính copy-paste).
+> `:firebase-events` là module lõi bắt buộc; `:firebase-events-lint`, `:app-events`, `:ads` là tuỳ chọn — chỉ copy khi cần.
+>
+> Đừng đặt abstraction dùng chung vào `:app`. Đừng thêm `project(":...")` dependency vào `:firebase-events` (sẽ phá tính copy-paste) — các module khác được phép phụ thuộc *vào* nó, không phải chiều ngược lại.
 
 ---
 
 ## Quick start
 
-Yêu cầu: JDK 17, Android SDK 35, Gradle Wrapper (đã có trong repo).
+Yêu cầu: JDK 17, Android SDK 36, Gradle Wrapper (đã có trong repo).
 
 ```bash
 # Build SDK
@@ -60,10 +65,11 @@ Unit test của SDK chạy trên JVM (Robolectric-free). `testOptions.unitTests.
 
 ## Tích hợp `firebase-events` vào project khác
 
-1. Copy thư mục `firebase-events/` sang repo đích (đặt cạnh `:app`).
-2. Thêm `include(":firebase-events")` vào `settings.gradle.kts` của repo đó.
-3. `implementation(project(":firebase-events"))` trong `app/build.gradle.kts`.
+1. Copy thư mục `firebase-events/` (và nên kèm `firebase-events-lint/` để có lint compile-time) sang repo đích, đặt cạnh `:app`.
+2. Thêm `include(":firebase-events")` (và `include(":firebase-events-lint")`) vào `settings.gradle.kts` của repo đó.
+3. `implementation(project(":firebase-events"))` + `lintChecks(project(":firebase-events-lint"))` trong `app/build.gradle.kts`.
 4. Khởi tạo trong `Application.onCreate` (xem `app/.../DemoApp.kt` ở repo này để có mẫu).
+5. (Tuỳ chọn) Copy thêm `app-events/` cho drop-in lifecycle tracking, và `ads/` nếu app dùng AdMob.
 
 Chi tiết từng bước, kể cả cấu hình Firebase project, flavor, Remote Config, consent, custom webhook:
 
@@ -95,7 +101,7 @@ Ba mối quan tâm xuyên suốt được nối qua `AnalyticsModule`:
 - **`EventConfigs`** — bật/tắt từng loại event qua boolean, serialize JSON xuống prefs, có thể push từ Remote Config.
 - **`TestLogMode`** (`NONE` / `TELEGRAM` / `WEBHOOK`) — khi `isTestMode == true`, event chỉ dump xuống Logcat + side-channel, **không** lên Firebase.
 
-> Lưu ý quan trọng khi debug: hai code path đi vào Firebase trong `AnalyticsEvents.flushEvents` và `AnalyticsUserProperties.logUserPropertyEv` hiện đang **bị comment** (đánh dấu `// Radar ko log event & properties`). Nếu DebugView không thấy event/user property dù mọi thứ wiring đúng — gần như chắc chắn đây là lý do. Xác nhận với chủ project trước khi enable lại.
+> Lưu ý khi debug: nếu `isTestMode == true` thì event/user property **không** lên Firebase (chỉ mirror xuống Logcat + side-channel). Muốn thấy dữ liệu trong DebugView, đảm bảo `isTestMode == false` và master kill-switch đang bật.
 
 ---
 
