@@ -41,8 +41,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseeventframework.data.Task
 import com.example.firebaseeventframework.data.TaskStatus
 import com.example.firebaseeventframework.event.AnalyticsEventsUtils
+import com.example.firebaseeventframework.event.PopupName
 import com.example.firebaseeventframework.event.ScreenName
 import com.example.firebaseeventframework.event.TaskListBtnEv
+import com.example.firebaseeventframework.ui.dialogs.TrackDialogScreenView
 import com.example.firebaseeventframework.ui.base.BaseTrackedActivity
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
 import com.example.firebaseeventframework.viewmodel.TaskListViewModel
@@ -126,6 +128,10 @@ private fun TaskListScreen(
     }
 
     if (showAddDialog) {
+        TrackDialogScreenView(
+            screenName = ScreenName.TASKS,
+            popupName = PopupName.ADD_TASK_DIALOG
+        )
         AddTaskDialog(
             onConfirm = { title ->
                 AnalyticsEventsUtils.logClickBtn(TaskListBtnEv.ADD_CONFIRM)
