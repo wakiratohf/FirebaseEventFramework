@@ -55,6 +55,12 @@
             android:label="@string/title_settings"
             android:parentActivityName=".MainActivity"
             android:theme="@style/Theme.FirebaseEventFramework" />
+        <activity
+            android:name=".SubscriptionActivity"
+            android:exported="false"
+            android:label="@string/title_subscription"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.FirebaseEventFramework" />
     </application>
 
 </manifest>

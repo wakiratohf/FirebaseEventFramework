@@ -10,4 +10,5 @@ enum class HomeBtnEv(
     OPEN_TIMER(ScreenName.HOME, "openTimer", PopupName.NONE),
     OPEN_STATS(ScreenName.HOME, "openStats", PopupName.NONE),
     OPEN_SETTINGS(ScreenName.HOME, "openSettings", PopupName.NONE),
+    OPEN_SUBSCRIPTION(ScreenName.HOME, "openSubscription", PopupName.NONE),
 }

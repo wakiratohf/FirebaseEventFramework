@@ -8,4 +8,5 @@ object ScreenName {
     const val DETAIL = "detail"
     const val SETTINGS = "settings"
     const val ONBOARDING = "onboarding"
+    const val SUBSCRIPTION = "subscription"
 }

@@ -4,4 +4,24 @@
     <string name="title_timer">Timer</string>
     <string name="title_stats">Stats</string>
     <string name="title_settings">Settings</string>
+
+    <!-- Subscription -->
+    <string name="title_subscription">Subscription</string>
+    <string name="subscription_title">Premium Features</string>
+    <string name="subscription_feature_1">Remove all ads</string>
+    <string name="subscription_feature_2">Unlimited tasks &amp; timers</string>
+    <string name="subscription_feature_3">Advanced statistics</string>
+    <string name="subscription_feature_4">Priority support</string>
+    <string name="subscription_cta_subscribe">Subscribe</string>
+    <string name="subscription_cta_trial">Start free trial</string>
+    <string name="subscription_billing_disclaimer">Auto-renewing subscription. Cancel anytime in Google Play.</string>
+    <string name="subscription_restore">Restore purchases</string>
+    <string name="subscription_restore_dialog_title">Restore purchases</string>
+    <string name="subscription_restore_dialog_message">Restore a previous purchase made with your Google account?</string>
+    <string name="subscription_restore_dialog_confirm">Restore</string>
+    <string name="subscription_success_title">Congratulations!</string>
+    <string name="subscription_success_badge">Premium User</string>
+    <string name="subscription_close">Close</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
 </resources>

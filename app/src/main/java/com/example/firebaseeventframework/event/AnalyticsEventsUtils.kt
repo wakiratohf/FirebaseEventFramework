@@ -4,6 +4,7 @@ import com.tohsoft.firebase_events.AnalyticsEvents
 import com.tohsoft.firebase_events.AnalyticsModule
 import com.tohsoft.firebase_events.AnalyticsUserProperties
 import com.tohsoft.firebase_events.models.AnalyticsEvent
+import com.tohsoft.firebase_events.models.IAPEv
 import com.tohsoft.firebase_events.models._ClickBtnEv
 import com.tohsoft.firebase_events.models._ScreenViewEv
 import com.tohsoft.firebase_events.models._ScreenViewEv.State
@@ -56,6 +57,26 @@ object AnalyticsEventsUtils {
 
     fun logProjectEvent(event: AnalyticsEvent) {
         AnalyticsEvents.logEvent(event)
+    }
+
+    /**
+     * Log event mua hàng (in-app purchase). Gom lời gọi SDK [IAPEv] về một chỗ
+     * thay vì để call-site tự dựng model, đồng nhất với các wrapper khác.
+     */
+    fun logIap(
+        where: String,
+        paymentSuccess: Boolean,
+        isTrial: Boolean,
+        productId: String,
+    ) {
+        AnalyticsEvents.logIAPEv(
+            IAPEv(
+                where = where,
+                paymentSuccess = paymentSuccess,
+                isTrial = isTrial,
+                productId = productId,
+            )
+        )
     }
 
     private fun secondsSinceAppOpen(): Int {

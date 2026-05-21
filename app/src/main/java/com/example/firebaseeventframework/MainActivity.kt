@@ -95,6 +95,10 @@ class MainActivity : BaseTrackedActivity() {
                         onOpenSettings = {
                             AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_SETTINGS)
                             startActivity(Intent(this, SettingsActivity::class.java))
+                        },
+                        onOpenSubscription = {
+                            AnalyticsEventsUtils.logClickBtn(HomeBtnEv.OPEN_SUBSCRIPTION)
+                            startActivity(Intent(this, SubscriptionActivity::class.java))
                         }
                     )
                 }
@@ -158,7 +162,8 @@ fun HomeContent(
     onOpenTasks: () -> Unit = {},
     onOpenTimer: () -> Unit = {},
     onOpenStats: () -> Unit = {},
-    onOpenSettings: () -> Unit = {}
+    onOpenSettings: () -> Unit = {},
+    onOpenSubscription: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -175,6 +180,7 @@ fun HomeContent(
         NavCard(title = "Timer", subtitle = "Pomodoro 25/5", onClick = onOpenTimer)
         NavCard(title = "Stats", subtitle = "Thống kê 7 ngày", onClick = onOpenStats)
         NavCard(title = "Settings", subtitle = "Cài đặt & đánh giá", onClick = onOpenSettings)
+        NavCard(title = "Subscription", subtitle = "Demo IAP tracking", onClick = onOpenSubscription)
     }
 }
 
