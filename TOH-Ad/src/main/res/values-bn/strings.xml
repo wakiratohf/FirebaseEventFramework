@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">অনুগ্রহপূর্বক অপেক্ষা করুন…</string>
+	<string name="msg_dialog_loading_data">তথ্য প্রস্তুত হচ্ছে...</string>
+	<string name="native_ads_action_open">খোলা</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">कृपया प्रतीक्षा करें…</string>
+	<string name="msg_dialog_loading_data">डेटा लोड हो रहा है...</string>
+	<string name="native_ads_action_open">खुला</string>
+</resources>

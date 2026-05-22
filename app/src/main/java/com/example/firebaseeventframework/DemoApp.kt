@@ -10,7 +10,9 @@ import com.example.firebaseeventframework.data.DatabaseProvider
 import com.example.firebaseeventframework.event.AppOpenCounter
 import com.example.firebaseeventframework.event.ConsentManager
 import com.example.firebaseeventframework.event.ScreenName
-import com.tohsoft.ads.AdsManager
+import com.tohsoft.ads.AdsConfig
+import com.tohsoft.ads.AdsModule
+import com.tohsoft.ads.analytics.AdsAnalytics
 import com.tohsoft.app_event.AppEventsInstaller
 import com.tohsoft.firebase_events.AnalyticsModule
 import com.tohsoft.firebase_events.AnalyticsUserProperties
@@ -38,10 +40,16 @@ class DemoApp : Application() {
             isTestMode = isDebug
         )
 
-        // Khởi tạo Google Mobile Ads SDK (banner ở MainActivity) + AdsEventTracker.
-        // Gọi sau AnalyticsModule.init vì lần đầu tracker log ad_engagement_level=0.
-        // Phần nặng của MobileAds tự chạy off-main-thread nên an toàn trong onCreate.
-        AdsManager.initialize(this, isTestMode = isDebug)
+        // Khởi tạo TOH-Ad (banner ở MainActivity) + AdsEventTracker (analytics bridge).
+        // AdsConfig/AdsModule.init bootstrap MobileAds (off-main-thread) + đọc ad ids từ assets.
+        // AdsAnalytics.init gọi sau AnalyticsModule.init vì lần đầu tracker log ad_engagement_level=0.
+        AdsConfig.getInstance().init(this)._setTestMode(isDebug)._setShowLog(isDebug)
+        // Bật loại ad muốn hiển thị (key = AdsType._value). Mặc định mAdsEnableState
+        // rỗng → isAdEnable(BANNER_BOTTOM) = false → banner không bao giờ load.
+        // Production: đẩy JSON này qua Firebase Remote Config thay vì hard-code.
+        AdsConfig.getInstance().setAdsEnableState("""{"banner_bottom":true}""")
+        AdsModule.getInstance().init(this)
+        AdsAnalytics.init(this, isTestMode = isDebug)
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}

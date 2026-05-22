@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">S\'il vous plaît, attendez…</string>
+	<string name="msg_dialog_loading_data">Chargement des données...</string>
+	<string name="native_ads_action_open">Ouvrir</string>
+</resources>

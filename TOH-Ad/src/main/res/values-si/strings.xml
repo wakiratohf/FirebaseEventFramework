@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">කරුණාකර රැඳී සිටින්න…</string>
+	<string name="msg_dialog_loading_data">දත්ත පැටවීම ...</string>
+	<string name="native_ads_action_open">විවෘත</string>
+</resources>

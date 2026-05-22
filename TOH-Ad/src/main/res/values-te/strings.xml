@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">దయచేసి వేచి ఉండండి ...</string>
+	<string name="msg_dialog_loading_data">డేటా లోడ్ అవుతోంది ...</string>
+	<string name="native_ads_action_open">ఓపెన్</string>
+</resources>

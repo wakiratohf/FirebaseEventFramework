@@ -41,18 +41,28 @@ import com.example.firebaseeventframework.ui.dialogs.logRateDialogButtonEv
 import com.example.firebaseeventframework.ui.dialogs.openPlayStore
 import com.example.firebaseeventframework.ui.dialogs.whereHomeBack
 import com.example.firebaseeventframework.ui.theme.FirebaseEventFrameworkTheme
-import com.tohsoft.ads.BannerAd
+import com.google.android.ump.FormError
+import com.tohsoft.ads.AdsConfig
+import com.tohsoft.ads.ConsentListener
+import com.tohsoft.ads.GoogleConsentManager
+import com.tohsoft.ads.analytics.BannerAd
 import com.tohsoft.app_event.OpenAppFromIntent
 
 class MainActivity : BaseTrackedActivity() {
 
     override fun screenName(): String = ScreenName.HOME
 
+    // BannerAd đọc AdsConfig.canShowAd() một lần (không reactive). Consent UMP có thể
+    // chưa xong lúc compose đầu → giữ cờ riêng, lật true khi gather/show consent hoàn tất
+    // để recompose và vẽ banner đúng thời điểm.
+    private val adsReady = mutableStateOf(AdsConfig.getInstance().canShowAd())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // open_app_from_ev: cold start (launcher icon → ACTION_MAIN, hoặc
         // notification/widget đã tag EXTRA_OPEN_FROM qua OpenAppFromIntent.putSource).
         OpenAppFromIntent.logFromIntent(intent, AppOpenSource.APP_ICON)
+        gatherConsentThenShowAds()
         enableEdgeToEdge()
         setContent {
             FirebaseEventFrameworkTheme {
@@ -71,11 +81,14 @@ class MainActivity : BaseTrackedActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     // Banner adaptive neo đáy màn Home (dùng test ad unit id).
+                    // Chỉ vẽ khi consent đã sẵn sàng (canShowAd() = true).
                     bottomBar = {
-                        BannerAd(
-                            modifier = Modifier.fillMaxWidth(),
-                            screenName = ScreenName.HOME,
-                        )
+                        if (adsReady.value) {
+                            BannerAd(
+                                modifier = Modifier.fillMaxWidth(),
+                                screenName = ScreenName.HOME,
+                            )
+                        }
                     }
                 ) { innerPadding ->
                     HomeContent(
@@ -152,6 +165,30 @@ class MainActivity : BaseTrackedActivity() {
         // onNewIntent thay vì onCreate — phải log ở cả hai nơi.
         setIntent(intent)
         OpenAppFromIntent.logFromIntent(intent, AppOpenSource.APP_ICON)
+    }
+
+    /**
+     * Chạy UMP consent (bắt buộc trước khi load AdMob). Thiết bị non-EEA →
+     * NOT_REQUIRED, callback complete ngay. Thiết bị EEA → load + show consent form.
+     * Mỗi nhánh đều lật [adsReady] = canShowAd() để recompose và vẽ banner.
+     */
+    private fun gatherConsentThenShowAds() {
+        if (adsReady.value) return
+        GoogleConsentManager.getInstance(this).gatherConsent(this, object : ConsentListener {
+            override fun consentFormLoaded(consentManager: GoogleConsentManager) {
+                consentManager.show(this@MainActivity) {
+                    adsReady.value = AdsConfig.getInstance().canShowAd()
+                }
+            }
+
+            override fun consentGatheringComplete(error: FormError?) {
+                adsReady.value = AdsConfig.getInstance().canShowAd()
+            }
+
+            override fun consentTimeout() {
+                adsReady.value = AdsConfig.getInstance().canShowAd()
+            }
+        })
     }
 }
 

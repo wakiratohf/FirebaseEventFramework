@@ -70,10 +70,10 @@ Khi project chưa có module runtime `:firebase-events`. Skill clone từ GitHub
 | `:firebase-events` | Core SDK (public, SemVer) — log methods + models + transports. ZERO project deps. | ✅ | — |
 | `:firebase-events-lint` | Lint rules enforce `buttonName` convention compile-time (`ClickBtnEvUnderscore`/`BtnPrefix`/`NotCamelCase`/`Empty`). | ✅ | (lintPublish) |
 | `:app-events` | App-level wrappers: lifecycle (`time_open_app`/`app_exit`), intent (`open_app_from`), ads tracker, rate dialog. High-level: `AppEventsInstaller.install(app)`. | ✅ | `:firebase-events` |
-| `:ads` | AdMob bridge — module DUY NHẤT biết Google Mobile Ads SDK. Compose `BannerAd` + `AdsManager.initialize()`. | ⚠ Opt-in | `:app-events` + `:firebase-events` |
+| `:TOH-Ad` | Thư viện ads TOHSOFT (AdMob + UMP) — module DUY NHẤT biết SDK ads. Core ở `com.tohsoft.ads`; bridge analytics ở `com.tohsoft.ads.analytics` (Compose `BannerAd` + `AdsConfig`/`AdsModule`/`AdsAnalytics.init`, hiện chỉ banner). | ⚠ Opt-in | `:app-events` + `:firebase-events` |
 | `:app` | Demo / smoke-test host. KHÔNG import. | ❌ | — |
 
-**Mặc định import 3 module** (`firebase-events`, `firebase-events-lint`, `app-events`). Project dùng AdMob → thêm `--modules ads` vào lệnh.
+**Mặc định import 3 module** (`firebase-events`, `firebase-events-lint`, `app-events`). Project dùng ads TOHSOFT → thêm `--modules TOH-Ad` vào lệnh.
 
 5 phase:
 1. **CLONE** — `git clone --depth 1` về `.claude-cache/firebase-events-upstream/`. Lần 2+: `git fetch + reset --hard origin/<branch>`.

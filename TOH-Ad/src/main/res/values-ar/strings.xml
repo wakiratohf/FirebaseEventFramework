@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">أرجو الإنتظار…</string>
+	<string name="msg_dialog_loading_data">تحميل البيانات...</string>
+	<string name="native_ads_action_open">افتح</string>
+</resources>

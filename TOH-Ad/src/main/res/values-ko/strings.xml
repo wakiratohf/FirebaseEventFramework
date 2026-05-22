@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">잠시만 기다려주십시오 ...</string>
+	<string name="msg_dialog_loading_data">데이터로드 중 ...</string>
+	<string name="native_ads_action_open">열다</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">Түр хүлээнэ үү ...</string>
+	<string name="msg_dialog_loading_data">Өгөгдлийг ачаалж байна ...</string>
+	<string name="native_ads_action_open">Нээлттэй байна</string>
+</resources>

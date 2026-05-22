@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">Prosím, čekejte…</string>
+	<string name="msg_dialog_loading_data">Načítání dat...</string>
+	<string name="native_ads_action_open">Otevřeno</string>
+</resources>

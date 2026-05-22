@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="ExtraTranslation,MissingTranslation">
+    <string name="msg_dialog_please_wait">Please wait...</string>
+    <string name="msg_dialog_loading_data">Loading data...</string>
+    <string name="native_ads_action_open" >Open</string>
+    <string name="msg_loading_ad">Loading Ads...</string>
+</resources>

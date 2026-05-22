@@ -13,10 +13,10 @@ Kho upstream / reference cho thư viện **`firebase-events`** — một lớp t
 | [`firebase-events/`](firebase-events/) | Thư viện SDK lõi (public, có SemVer) | `minSdk 21`, `compileSdk 36`, JDK 17. Không phụ thuộc module nội bộ nào — copy-paste sang repo khác là chạy. |
 | [`firebase-events-lint/`](firebase-events-lint/) | Lint rule đi kèm SDK | Pure-JVM (JDK 17). Enforce convention `buttonName` ở compile time (4 issue ID). Copy kèm `:firebase-events`. |
 | [`app-events/`](app-events/) | Wrapper app-level (optional, `com.tohsoft.app_event`) | `minSdk 21`, JDK 17. Drop-in tracking cho lifecycle (time_open_app / app_exit), ads, rate dialog. Phụ thuộc `:firebase-events`. |
-| [`ads/`](ads/) | Cầu nối AdMob → analytics (optional, `com.tohsoft.ads`) | `minSdk 21`, JDK 17. Khởi tạo MobileAds + track ad event qua `AdsEventTracker`. Phụ thuộc `:firebase-events` + `:app-events`. |
+| [`TOH-Ad/`](TOH-Ad/) | Thư viện ads TOHSOFT + cầu nối → analytics (optional, `com.tohsoft.ad`) | `minSdk 23`, JDK 17, Compose. Library ads thật (AdMob + UMP, banner/inter/app-open/OPA). Bridge analytics ở `com.tohsoft.ads.analytics` track ad event qua `AdsEventTracker` (hiện chỉ banner). Phụ thuộc `:firebase-events` + `:app-events`. |
 | [`app/`](app/) | Demo / smoke-test (`com.example.firebaseeventframework`) | `minSdk 23`, JDK 11, Jetpack Compose. Chỉ minh hoạ pattern tích hợp, không tái sử dụng. |
 
-> `:firebase-events` là module lõi bắt buộc; `:firebase-events-lint`, `:app-events`, `:ads` là tuỳ chọn — chỉ copy khi cần.
+> `:firebase-events` là module lõi bắt buộc; `:firebase-events-lint`, `:app-events`, `:TOH-Ad` là tuỳ chọn — chỉ copy khi cần.
 >
 > Đừng đặt abstraction dùng chung vào `:app`. Đừng thêm `project(":...")` dependency vào `:firebase-events` (sẽ phá tính copy-paste) — các module khác được phép phụ thuộc *vào* nó, không phải chiều ngược lại.
 
@@ -69,7 +69,7 @@ Unit test của SDK chạy trên JVM (Robolectric-free). `testOptions.unitTests.
 2. Thêm `include(":firebase-events")` (và `include(":firebase-events-lint")`) vào `settings.gradle.kts` của repo đó.
 3. `implementation(project(":firebase-events"))` + `lintChecks(project(":firebase-events-lint"))` trong `app/build.gradle.kts`.
 4. Khởi tạo trong `Application.onCreate` (xem `app/.../DemoApp.kt` ở repo này để có mẫu).
-5. (Tuỳ chọn) Copy thêm `app-events/` cho drop-in lifecycle tracking, và `ads/` nếu app dùng AdMob.
+5. (Tuỳ chọn) Copy thêm `app-events/` cho drop-in lifecycle tracking, và `TOH-Ad/` nếu app dùng thư viện ads TOHSOFT (AdMob + UMP) — bridge analytics nằm ở package `com.tohsoft.ads.analytics`.
 
 Chi tiết từng bước, kể cả cấu hình Firebase project, flavor, Remote Config, consent, custom webhook:
 

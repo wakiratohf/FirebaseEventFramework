@@ -3,6 +3,29 @@
 Notes for upgrading an in-tree copy of `:firebase-events` to a newer SDK
 version. Read top-down — the most recent version is at the top.
 
+## Repo note — reference ad bridge: `:ads` → `:TOH-Ad` (2026-05)
+
+This does **not** change the `:firebase-events` public API (no VERSION bump). It
+swaps the demo's reference ad bridge: the old toy `:ads` module (`com.tohsoft.ads`,
+a thin AdMob `BannerAd` Composable) is removed and replaced by **`:TOH-Ad`**
+(`com.tohsoft.ad`) — the real TOHSOFT ads library (AdMob + UMP) vendored from the
+toh-vpn project, with the analytics bridge living in its `com.tohsoft.ads.analytics`
+package.
+
+| Was | Now |
+|---|---|
+| `include(":ads")` | `include(":TOH-Ad")` |
+| `implementation(project(":ads"))` | `implementation(project(":TOH-Ad"))` |
+| `AdsManager.initialize(ctx, isTestMode)` | `AdsConfig.getInstance().init(ctx)._setTestMode(..)`; `AdsModule.getInstance().init(ctx)`; `AdsAnalytics.init(ctx, isTestMode)` |
+| `com.tohsoft.ads.BannerAd` | `com.tohsoft.ads.analytics.BannerAd` |
+| `AdMobAdRevenue` (`AdRevenueLike`) | `TohAdRevenue` (`AdRevenueLike`, same keys) |
+
+The `AdsEventTracker` / `AdRevenueLike` / `AdResult` contracts in `:app-events` /
+`:firebase-events` are unchanged. The vendored library gained two listener hooks
+(`AdWrapperListener.onAdImpression` / `onPaidEvent`) so the banner still emits all
+four ad events; see [`ADS_EVENT_GUIDE.md`](../../app-events/docs/ADS_EVENT_GUIDE.md).
+Also added `google-ump` to the version catalog. Bridging is **banner-only** for now.
+
 ## 1.0.0 — Initial public release (2026-05)
 
 This is the first version of the SDK suitable for copy-pasting into other

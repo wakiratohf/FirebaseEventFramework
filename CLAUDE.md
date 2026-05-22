@@ -11,7 +11,7 @@ This repo is the **upstream / reference** copy of the `firebase-events` SDK and 
 | `:firebase-events` | Core SDK (public, SemVer) | `minSdk 21`, JDK 17. **Zero internal `project(":...")` deps** so it lifts cleanly into other repos. Bump `firebase-events/VERSION` when you change the public surface enumerated in `firebase-events/README.md`. |
 | `:firebase-events-lint` | Lint rules shipped with the SDK | Pure-JVM (JDK 17). Enforces the `buttonName` convention at compile time. Copy alongside `:firebase-events`. |
 | `:app-events` (`com.tohsoft.app_event`) | App-level wrappers (optional) | `minSdk 21`, JDK 17. Lifecycle/intent/ads helpers that wrap Android plumbing around `:firebase-events`. Depends on `:firebase-events`. |
-| `:ads` (`com.tohsoft.ads`) | AdMob → analytics bridge (optional) | `minSdk 21`, JDK 17, Compose-enabled. The only module that knows the concrete ad SDK (AdMob). Depends on `:firebase-events` + `:app-events`. |
+| `:TOH-Ad` (`com.tohsoft.ad`) | TOHSOFT ads library + analytics bridge (optional) | `minSdk 23`, JDK 17, Compose-enabled. The real TOHSOFT ads library (AdMob + UMP: banner/interstitial/app-open/OPA), vendored from the toh-vpn project. The only module that knows the concrete ad SDK. The analytics bridge in `com.tohsoft.ads.analytics` forwards ad callbacks into `AdsEventTracker` (banner-only for now). Depends on `:firebase-events` + `:app-events`. |
 | `:app` (`com.example.firebaseeventframework`) | Demo / smoke-test host | `minSdk 23`, JDK 11, Compose. Exercises the SDK only; not shipped. Don't put reusable abstractions here. |
 
 Dependency direction is strict: everything may depend **on** `:firebase-events`, never the reverse. `:firebase-events-lint` is wired in via `lintPublish` (bundled into the SDK AAR) and `lintChecks` (in `:app`) — these are build-time, not runtime, deps, so they don't violate the SDK's zero-dependency contract.
@@ -24,7 +24,7 @@ Multi-module Gradle, Kotlin 2.0.20, AGP 9.2.1. Library modules target JDK 17; `:
 # Build
 ./gradlew :firebase-events:assembleDebug
 ./gradlew :app-events:assembleDebug
-./gradlew :ads:assembleDebug
+./gradlew :TOH-Ad:assembleDebug
 ./gradlew :app:assembleDebug
 
 # Unit tests — the SDK's tests live in :firebase-events; lint rules are tested in :firebase-events-lint.
@@ -85,9 +85,13 @@ Each lifecycle event exposes **two mutually exclusive** entry points — never w
 - **High-level** — `AppEventsInstaller.install(application)`, one line in `Application.onCreate()`. Registers its own `ActivityLifecycleCallbacks` + `ProcessLifecycleOwner` observer. `lifecycle-process` is imported *only* by the installer.
 - **Low-level** — pure functions (`TimeOpenAppTracker.onSessionStart()`, `AppExitTracker.onAppExit()` / `setLastActiveScreen()`) you call from your own lifecycle code, for edge-case triggers.
 
-### `:ads` — the only SDK-aware module
+### `:TOH-Ad` — the only SDK-aware module
 
-`:ads` is the single place that depends on a concrete ad SDK (Google Mobile Ads / AdMob, exposed via `api` so host apps can use `AdRequest`/`MobileAds` directly). It bridges AdMob callbacks into `AdsEventTracker` (which lives in `:app-events` and is itself ad-SDK-agnostic) and into the `AdRevenueLike` adapter (which lives in `:firebase-events`). Keep AdMob-specific glue here, out of `:app`. It also exports a Compose `BannerAd`, hence Compose is enabled in its build.
+`:TOH-Ad` is the real TOHSOFT ads library (vendored from the toh-vpn project), the single place that depends on a concrete ad SDK (Google Mobile Ads / AdMob + UMP consent, exposed via `api`). Its core (`AdsConfig`, `AdsModule`, the `wrapper/` ad types) lives under package `com.tohsoft.ads`; the analytics glue lives under `com.tohsoft.ads.analytics`.
+
+The bridge forwards the library's ad callbacks into `AdsEventTracker` (which lives in `:app-events` and is itself ad-SDK-agnostic) and into the `AdRevenueLike` adapter (which lives in `:firebase-events`). Because the upstream library only surfaced `onAdStartLoad/onAdLoaded/onAdFailedToLoad/onAdClicked/onAdOpened/onAdClosed`, two hooks were **added to the vendored copy** to keep all four analytics events: `AdWrapperListener.onAdImpression()` (→ `show_ad_ev`) and `onPaidEvent(adValue, adUnitId, adSource)` (→ `paid_ad_impression`), wired in `AdViewWrapper`'s bottom-banner path. Bridging is **banner-only** for now; interstitial/app-open/OPA are unbridged.
+
+The analytics package owns: `AdsAnalytics` (init + `attachBanner` listener factory), `TohAdRevenue` (`AdRevenueLike` adapter for AdMob `AdValue`), `AdType`/`AdAction` constants, and a Compose `BannerAd` wrapper (hence Compose is enabled in this module's build). Keep ad-SDK-specific glue here, out of `:app` — the host app only calls `AdsConfig`/`AdsModule`/`AdsAnalytics.init` and drops `BannerAd` into its UI.
 
 ### `:firebase-events-lint` — compile-time convention enforcement
 
@@ -110,7 +114,7 @@ Pure-JVM lint module. `ButtonNameConventionDetector` flags any enum implementing
 ## Conventions specific to this repo
 
 - `:firebase-events` has **zero runtime `project(":...")` dependencies** by design (so it can be lifted into other repos). Use the adapter interfaces (`WebhookSender`, `AdRevenueLike`, `AnalyticsEvent`) instead of reaching into another module. The lone exception is `lintPublish(project(":firebase-events-lint"))`, a build-time configuration that bundles lint rules into the AAR — not a runtime dep.
-- `:app-events` → `:firebase-events`; `:ads` → `:app-events` + `:firebase-events`; `:app` → all three (+ `lintChecks` on the lint module). Never invert these arrows.
+- `:app-events` → `:firebase-events`; `:TOH-Ad` → `:app-events` + `:firebase-events`; `:app` → all three (+ `lintChecks` on the lint module). Never invert these arrows.
 - Event names use lowercase snake_case, ≤ 40 chars, start with a letter. SDK-shipped events suffix `_ev`. Param keys ≤ 40 chars; string values ≤ 100 chars. Violations are flagged at runtime by `EventNameValidator` only when `isTestMode == true`; the `buttonName` convention is additionally enforced at compile time by `:firebase-events-lint`.
-- Library modules (`:firebase-events`, `:app-events`, `:ads`) target JDK 17, `minSdk 21`, `compileSdk 36`. `:app` targets JDK 11, `minSdk 23`. Don't unify them without reason — the libraries' lower minSdk is part of their portability contract.
+- Library modules `:firebase-events` / `:app-events` target JDK 17, `minSdk 21`, `compileSdk 36`. `:TOH-Ad` is JDK 17 / `compileSdk 36` but `minSdk 23` (the upstream library was `minSdk 24`, lowered to match `:app` and avoid a manifest-merger conflict). `:app` targets JDK 11, `minSdk 23`. Don't unify the lower-minSdk libraries with `:app` without reason — their lower minSdk is part of the portability contract.
 - Don't commit real `google-services.json` files for downstream projects. The one in `app/` here is for the demo only.

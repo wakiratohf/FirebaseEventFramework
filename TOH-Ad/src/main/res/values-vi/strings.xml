@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">Vui lòng chờ…</string>
+	<string name="msg_dialog_loading_data">Đang tải dữ liệu ...</string>
+	<string name="native_ads_action_open">Mở</string>
+</resources>

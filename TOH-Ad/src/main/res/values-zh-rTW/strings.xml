@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="msg_dialog_please_wait">請稍候…</string>
+	<string name="msg_dialog_loading_data">加載數據中...</string>
+	<string name="native_ads_action_open">打開</string>
+</resources>

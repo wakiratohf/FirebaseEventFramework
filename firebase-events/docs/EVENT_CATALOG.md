@@ -125,8 +125,10 @@ User tapped on an ad.
 A revenue-bearing ad impression. The bundle is whatever your `AdRevenueLike`
 implementation returns from `toBundle()` — see [`AdRevenueLike.kt`](../src/main/java/com/tohsoft/firebase_events/models/AdRevenueLike.kt).
 
-In the reference project, the keys are: `ad_unit_id`, `ad_type`, `currency`,
-`precision_type`.
+In this repo the adapter is `TohAdRevenue` (`:TOH-Ad`, package
+`com.tohsoft.ads.analytics`), whose keys are: `value` (double, currency units),
+`currency`, `precision` (`estimated`/`publisher_provided`/`precise`/`unknown`),
+`ad_platform` (`admob`), plus `ad_unit_id` and `ad_source` when present.
 
 ---
 

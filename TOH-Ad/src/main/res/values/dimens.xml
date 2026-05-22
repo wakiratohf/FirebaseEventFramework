@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="native_medium_height">260dp</dimen>
+    <dimen name="native_exit_dialog_height">250dp</dimen>
+    <dimen name="native_content_media_height">120dp</dimen>
+
+    <dimen name="native_player_medium_height">250dp</dimen>
+    <dimen name="native_player_small_height">150dp</dimen>
+    <dimen name="native_small_height">65dp</dimen>
+
+    <dimen name="width_audio_size">55dp</dimen>
+    <dimen name="height_audio_size">55dp</dimen>
+    <dimen name="item_audio_height">75dp</dimen>
+    <dimen name="item_audio_image_padding">2dp</dimen>
+    <dimen name="item_audio_padding_hoz">8dp</dimen>
+    <dimen name="item_audio_padding_ver">3dp</dimen>
+
+    <dimen name="width_video_size">90dp</dimen>
+    <dimen name="height_video_size">68dp</dimen>
+    <dimen name="item_video_height">75dp</dimen>
+    <dimen name="item_video_image_padding">0dp</dimen>
+    <dimen name="item_video_padding_hoz">8dp</dimen>
+    <dimen name="item_video_padding_ver">3dp</dimen>
+</resources>
