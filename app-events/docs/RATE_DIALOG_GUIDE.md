@@ -98,11 +98,11 @@ the post-increment count.
 
 Call sites map each button to its name + star value:
 
-| Button | `buttonNameClicked` | `rateStars` |
-|---|---|---|
+| Button | `buttonNameClicked`           | `rateStars` |
+|---|-------------------------------|---|
 | Đánh giá 5 sao | `RateUs` (`RATE_BTN_RATE_US`) | `5` — the button is an explicit 5-star action |
-| Để sau | `Later` (`RATE_BTN_LATER`) | `0` |
-| Không thích | `NoT` (`RATE_BTN_DISLIKE`) | `0` |
+| Để sau | `Later` (`RATE_BTN_LATER`)    | `0` |
+| Không thích | `Not` (`RATE_BTN_DISLIKE`)    | `0` |
 
 `where` per host:
 - **Home (back-to-exit):** `whereHomeBack()` → `"home_back_${RatePrefs.showOnBackPressOrdinal}rd"`,
